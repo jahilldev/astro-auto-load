@@ -41,7 +41,9 @@ export default defineConfig({
 });
 ```
 
-**That's it!** The middleware is automatically injected. No manual setup required.
+**That's it!** The middleware is automatically injected.
+
+> **Note:** If you have an existing `src/middleware.ts` file, you'll need to manually add `autoLoadMiddleware()` to your middleware chain. See [Custom Middleware Composition](#custom-middleware-composition) below.
 
 ### 2. (Optional) Add TypeScript support
 
@@ -202,7 +204,11 @@ export function createCustomLoaderContext(
 
 ### Custom Middleware Composition
 
-The middleware is automatically injected by the integration. If you need to compose it with your own middleware:
+**Important:** The integration automatically injects middleware **only if you don't have a `src/middleware.ts` file**.
+
+#### If you have existing middleware:
+
+If you already have a `src/middleware.ts` file with `export const onRequest`, you **must** manually include `autoLoadMiddleware()`:
 
 ```ts
 // src/middleware.ts
@@ -215,11 +221,15 @@ const myMiddleware = defineMiddleware(async (context, next) => {
   return next();
 });
 
-// Compose with the auto-load middleware
+// IMPORTANT: Include autoLoadMiddleware() in your sequence!
 export const onRequest = sequence(myMiddleware, autoLoadMiddleware());
 ```
 
-Note: If you manually export `onRequest` from `src/middleware.ts`, you'll need to include `autoLoadMiddleware()` yourself. Otherwise, the integration injects it automatically.
+#### If you don't have middleware:
+
+The integration automatically injects it for you - no `src/middleware.ts` needed! ✨
+
+**Why?** Astro uses **either** your manual `src/middleware.ts` export **or** integration-injected middleware, but not both. If you export `onRequest` yourself, you take full control and must include `autoLoadMiddleware()` in your chain.
 
 ### Skipping Routes
 
