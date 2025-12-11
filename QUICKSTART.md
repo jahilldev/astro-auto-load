@@ -30,7 +30,7 @@ Create `src/components/UserProfile.astro`:
 
 ```astro
 ---
-import { getData, type Loader } from 'astro-auto-load';
+import { getData, type Loader } from 'astro-auto-load/runtime';
 
 // This function runs BEFORE the page renders
 export const load = async (ctx) => {

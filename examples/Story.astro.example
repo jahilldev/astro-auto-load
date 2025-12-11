@@ -7,7 +7,7 @@
  * 2. Accessing route parameters
  * 3. Automatic type inference from the loader
  */
-import { getData, type Loader } from 'astro-auto-load';
+import { getData, type Loader } from 'astro-auto-load/runtime';
 
 // Define the loader - this runs BEFORE the page renders
 export const load = async (ctx) => {

@@ -61,17 +61,16 @@ Define a loader in your component:
 ```astro
 ---
 // src/components/Story.astro
-import { getData } from 'astro-auto-load/runtime/helpers';
-import type { LoaderContext } from 'astro-auto-load';
+import { getData, type Loader } from 'astro-auto-load/runtime';
 
 // Define your loader - it receives route params, URL, request, etc.
-export const load = async (ctx: LoaderContext) => {
+export const load = async (ctx) => {
   const res = await fetch(`https://api.example.com/stories/${ctx.params.id}`);
-  return res.json();
+  return res.json() as Promise<{ id: string; title: string; body: string }>;
 };
 
-// Retrieve the data that was loaded
-const data = getData<{ id: string; title: string; body: string }>(Astro, import.meta.url);
+// Type is automatically inferred from the loader!
+const data = getData<Loader<typeof load>>(Astro, import.meta.url);
 ---
 
 {data && (
@@ -101,8 +100,7 @@ If multiple components request the same data, use the built-in dedupe helper:
 
 ```astro
 ---
-import { getData } from 'astro-auto-load/runtime/helpers';
-import type { LoaderContext } from 'astro-auto-load';
+import { getData, type LoaderContext } from 'astro-auto-load/runtime';
 
 export const load = async (ctx: LoaderContext) => {
   // This will only execute once per request, even if used by multiple components
@@ -117,52 +115,6 @@ export const load = async (ctx: LoaderContext) => {
 
 const data = getData(Astro, import.meta.url);
 ---
-```
-
-### Full Example with Comments
-
-```astro
----
-// src/components/CommentList.astro
-import { getData } from 'astro-auto-load/runtime/helpers';
-import type { LoaderContext } from 'astro-auto-load';
-
-interface Comment {
-  id: string;
-  author: string;
-  body: string;
-}
-
-export const load = async (ctx: LoaderContext) => {
-  const storyId = ctx.params.id;
-
-  // Dedupe ensures this only runs once even if multiple CommentList components exist
-  return ctx.dedupe(
-    async (id: string) => {
-      const res = await fetch(`https://api.example.com/stories/${id}/comments`);
-      return res.json() as Promise<Comment[]>;
-    },
-    storyId
-  );
-};
-
-const comments = getData<Comment[]>(Astro, import.meta.url);
----
-
-<section class="comments">
-  <h3>Comments</h3>
-  {comments && comments.length > 0 ? (
-    <ul>
-      {comments.map((comment) => (
-        <li key={comment.id}>
-          <strong>{comment.author}:</strong> {comment.body}
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <p>No comments yet.</p>
-  )}
-</section>
 ```
 
 ## How It Works
@@ -307,7 +259,7 @@ The recommended approach - let TypeScript infer types automatically:
 
 ```astro
 ---
-import { getData, type Loader } from 'astro-auto-load';
+import { getData, type Loader } from 'astro-auto-load/runtime';
 
 export const load = async (ctx) => {
   return {
@@ -330,7 +282,7 @@ const data = getData<Loader<typeof load>>(Astro, import.meta.url);
 You can extract the loader's return type for reuse:
 
 ```ts
-import type { Loader } from 'astro-auto-load';
+import { type Loader } from 'astro-auto-load/runtime';
 
 const load = async (ctx) => ({ count: 42 });
 

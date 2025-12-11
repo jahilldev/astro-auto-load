@@ -5,7 +5,7 @@
  * The Loader<typeof load> pattern automatically extracts types
  * from your loader function, keeping types and data in sync!
  */
-import { getData, type Loader } from 'astro-auto-load';
+import { getData, type Loader } from 'astro-auto-load/runtime';
 
 // Example 1: Simple object return
 export const load = async (ctx) => {

@@ -1,6 +1,6 @@
 {
   "name": "astro-auto-load",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Automatic component-level loaders for Astro SSR (parallel, deduped, plug-and-play).",
   "type": "module",
   "exports": {
@@ -8,29 +8,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    },
     "./middleware": {
       "types": "./dist/middleware.d.ts",
       "import": "./dist/middleware.js"
     },
-    "./runtime/registry": {
-      "types": "./dist/runtime/registry.d.ts",
-      "import": "./dist/runtime/registry.js"
-    },
-    "./runtime/types": {
-      "types": "./dist/runtime/types.d.ts",
-      "import": "./dist/runtime/types.js"
+    "./runtime/orchestrator": {
+      "types": "./dist/runtime/orchestrator.d.ts",
+      "import": "./dist/runtime/orchestrator.js"
     },
     "./runtime/context": {
       "types": "./dist/runtime/context.d.ts",
       "import": "./dist/runtime/context.js"
-    },
-    "./runtime/helpers": {
-      "types": "./dist/runtime/helpers.d.ts",
-      "import": "./dist/runtime/helpers.js"
-    },
-    "./runtime/orchestrator": {
-      "types": "./dist/runtime/orchestrator.d.ts",
-      "import": "./dist/runtime/orchestrator.js"
     }
   },
   "files": [
