@@ -33,14 +33,14 @@ Create `src/components/UserProfile.astro`:
 import { getData, type Loader } from 'astro-auto-load/runtime';
 
 // This function runs BEFORE the page renders
-export const load = async (ctx) => {
+export const loader = async (ctx) => {
   const userId = ctx.params.id;
   const res = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
   return res.json() as Promise<{ id: string; name: string; email: string }>;
 };
 
 // Type is automatically inferred from the loader!
-const user = getData<Loader<typeof load>>(Astro, import.meta.url);
+const user = getData<Loader<typeof loader>>(Astro, import.meta.url);
 ---
 
 {user ? (
@@ -92,7 +92,7 @@ Visit `http://localhost:4321/users/1` to see it in action!
 ## What Just Happened?
 
 1. The integration automatically injected middleware into your Astro app
-2. The Vite plugin detected `export const load` in `UserProfile.astro`
+2. The Vite plugin detected `export const loader` in `UserProfile.astro`
 3. It automatically registered the loader function
 4. When you visit `/users/1`, the middleware runs the loader with `params.id = "1"`
 5. The data is fetched in parallel with any other loaders on the page
@@ -110,7 +110,7 @@ Visit `http://localhost:4321/users/1` to see it in action!
 
 - Make sure you have `output: 'server'` or `output: 'hybrid'` in your Astro config
 - Verify the integration is added: `integrations: [autoLoad()]`
-- Check that your loader is exported: `export const load = ...`
+- Check that your loader is exported: `export const loader = ...`
 - Look in the browser console for any errors
 
 **Q: I'm getting TypeScript errors**

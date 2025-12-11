@@ -7,7 +7,7 @@ export type AutoLoadOptions = {};
  * Astro integration for automatic component-level data loading.
  *
  * This integration:
- * 1. Detects components with `export const load` functions
+ * 1. Detects components with `export const loader` functions
  * 2. Automatically registers them for parallel execution
  * 3. Injects middleware to run loaders before page render
  * 4. Provides data to components via Astro.locals

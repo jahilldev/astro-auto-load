@@ -12,7 +12,7 @@ In typical Astro SSR apps, you face a choice:
 
 ## The Solution
 
-`astro-auto-load` lets you define `load` functions directly in your components. The integration:
+`astro-auto-load` lets you define `loader` functions directly in your components. The integration:
 
 ✅ **Collects all loaders** before rendering  
 ✅ **Runs them in parallel** (no waterfalls)  
@@ -66,13 +66,13 @@ Define a loader in your component:
 import { getData, type Loader } from 'astro-auto-load/runtime';
 
 // Define your loader - it receives route params, URL, request, etc.
-export const load = async (ctx) => {
+export const loader = async (ctx) => {
   const res = await fetch(`https://api.example.com/stories/${ctx.params.id}`);
   return res.json() as Promise<{ id: string; title: string; body: string }>;
 };
 
 // Type is automatically inferred from the loader!
-const data = getData<Loader<typeof load>>(Astro, import.meta.url);
+const data = getData<Loader<typeof loader>>(Astro, import.meta.url);
 ---
 
 {data && (
@@ -104,7 +104,7 @@ If multiple components request the same data, use the built-in dedupe helper:
 ---
 import { getData, type LoaderContext } from 'astro-auto-load/runtime';
 
-export const load = async (ctx: LoaderContext) => {
+export const loader = async (ctx: LoaderContext) => {
   // This will only execute once per request, even if used by multiple components
   return ctx.dedupe(
     async (id: string) => {
@@ -121,7 +121,7 @@ const data = getData(Astro, import.meta.url);
 
 ## How It Works
 
-1. **Build-time**: The Vite plugin scans your `.astro` components for `export const load` functions
+1. **Build-time**: The Vite plugin scans your `.astro` components for `export const loader` functions
 2. **Build-time**: It automatically injects code to register each loader
 3. **Runtime**: The middleware runs before rendering, collecting all registered loaders
 4. **Runtime**: All loaders execute in parallel (no waterfalls!)
@@ -271,7 +271,7 @@ The recommended approach - let TypeScript infer types automatically:
 ---
 import { getData, type Loader } from 'astro-auto-load/runtime';
 
-export const load = async (ctx) => {
+export const loader = async (ctx) => {
   return {
     name: 'James',
     age: 38,
@@ -280,7 +280,7 @@ export const load = async (ctx) => {
 };
 
 // Type is automatically inferred from the loader!
-const data = getData<Loader<typeof load>>(Astro, import.meta.url);
+const data = getData<Loader<typeof loader>>(Astro, import.meta.url);
 // data.name is string
 // data.age is number
 // data.hobbies is string[]
@@ -294,9 +294,9 @@ You can extract the loader's return type for reuse:
 ```ts
 import { type Loader } from 'astro-auto-load/runtime';
 
-const load = async (ctx) => ({ count: 42 });
+const loader = async (ctx) => ({ count: 42 });
 
-export type Data = Loader<typeof load>; // { count: number }
+export type Data = Loader<typeof loader>; // { count: number }
 
 // Use the type elsewhere
 function processData(data: Data) {

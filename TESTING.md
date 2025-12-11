@@ -14,7 +14,7 @@ When you install this plugin in a real Astro project, test the following:
 
 ### Loader Detection
 
-- [ ] Component with `export const load = async (ctx) => { ... }` is detected
+- [ ] Component with `export const loader = async (ctx) => { ... }` is detected
 - [ ] Component with `export async function load(ctx) { ... }` is detected
 - [ ] Component without a loader is not affected
 - [ ] Multiple components with loaders all work on the same page
@@ -82,7 +82,7 @@ npm link astro-auto-load
 import { getData } from 'astro-auto-load/runtime/helpers';
 import type { LoaderContext } from 'astro-auto-load';
 
-export const load = async (ctx: LoaderContext) => {
+export const loader = async (ctx: LoaderContext) => {
   console.log('Loader running for:', ctx.url.pathname);
   console.log('Params:', ctx.params);
 
@@ -125,7 +125,7 @@ console.log('Component rendering with data:', data);
 Add console.log to your loader:
 
 ```ts
-export const load = async (ctx: LoaderContext) => {
+export const loader = async (ctx: LoaderContext) => {
   console.log('LOADER CALLED:', import.meta.url);
   // ... rest of loader
 };
@@ -197,7 +197,7 @@ export function GET() {
 - Check `output` is set to `server` or `hybrid` in astro.config
 - Verify integration is added: `integrations: [autoLoad()]`
 - Look for errors in console
-- Confirm `export const load` syntax is correct
+- Confirm `export const loader` syntax is correct
 - Check if you have a custom `src/middleware.ts` that might be overriding the auto-injected one
 
 ### Data is undefined

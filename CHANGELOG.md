@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Initial implementation of astro-auto-load integration
-- Automatic detection of `export const load` functions in Astro components
+- Automatic detection of `export const loader` functions in Astro components
 - Parallel execution of all loaders before page render
 - Built-in deduplication helper to prevent duplicate async calls
 - Type-safe data access via `getData()`
@@ -22,5 +22,5 @@ All notable changes to this project will be documented in this file.
 - **No waterfalls**: All loaders run in parallel
 - **Automatic registration**: Vite plugin detects and registers loaders
 - **Request deduplication**: Built-in helper to prevent duplicate fetches
-- **Type-safe**: Full TypeScript support with automatic type inference via `Loader<typeof load>`
+- **Type-safe**: Full TypeScript support with automatic type inference via `Loader<typeof loader>`
 - **Composable**: Can still manually compose with custom middleware if needed

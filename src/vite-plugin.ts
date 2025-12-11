@@ -5,7 +5,7 @@ interface PluginOptions {
 }
 
 /**
- * Vite plugin that detects components with `export const load` and
+ * Vite plugin that detects components with `export const loader` and
  * automatically registers them in the loader registry.
  */
 export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
@@ -16,11 +16,11 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
     async transform(code, id) {
       if (!id.endsWith('.astro')) return null;
 
-      // Check for 'export const load' or 'export async function load' in frontmatter
+      // Check for 'export const loader' or 'export async function loader' in frontmatter
       // We use regex since the AST parser doesn't expose export info directly
-      const hasLoadExport = /export\s+(const|async\s+function)\s+load\s*[=(]/m.test(code);
+      const hasLoaderExport = /export\s+(const|async\s+function)\s+loader\s*[=(]/m.test(code);
 
-      if (!hasLoadExport) return null;
+      if (!hasLoaderExport) return null;
 
       // More robust frontmatter injection
       const frontmatterMatch = code.match(/^---\s*\n/);
@@ -29,12 +29,12 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
         // Component has frontmatter - inject after opening ---
         const injected = code.replace(
           /^---\s*\n/,
-          `---\nimport { registerLoader } from "astro-auto-load/runtime/registry";\nregisterLoader(import.meta.url, load);\n`,
+          `---\nimport { registerLoader } from "astro-auto-load/runtime/registry";\nregisterLoader(import.meta.url, loader);\n`,
         );
         return { code: injected, map: null };
       } else {
         // No frontmatter - add it
-        const injected = `---\nimport { registerLoader } from "astro-auto-load/runtime/registry";\nregisterLoader(import.meta.url, load);\n---\n${code}`;
+        const injected = `---\nimport { registerLoader } from "astro-auto-load/runtime/registry";\nregisterLoader(import.meta.url, loader);\n---\n${code}`;
         return { code: injected, map: null };
       }
     },

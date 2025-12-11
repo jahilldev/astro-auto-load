@@ -6,15 +6,14 @@ import type { AstroGlobal } from 'astro';
  * Usage in an Astro component:
  * ```astro
  * ---
- * import { getData, type Loader } from 'astro-auto-load';
+ * import { getData, type Loader } from 'astro-auto-load/runtime';
  *
- * type Data = Loader<typeof load>; // { title: string, count: number }
- *
- * export const load = async (ctx) => {
+ * export const loader = async (ctx) => {
  *   return { title: 'Hello', count: 42 };
  * };
  *
  * // Type is automatically inferred from the loader
+ * type Data = Loader<typeof loader>; // { title: string, count: number }
  * const data = getData<Data>(Astro, import.meta.url);
  * // data.title is string, data.count is number
  * ---
