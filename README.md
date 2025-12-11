@@ -61,7 +61,7 @@ Define a loader in your component:
 ```astro
 ---
 // src/components/Story.astro
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 import type { LoaderContext } from 'astro-auto-load';
 
 // Define your loader - it receives route params, URL, request, etc.
@@ -71,7 +71,7 @@ export const load = async (ctx: LoaderContext) => {
 };
 
 // Retrieve the data that was loaded
-const data = getLoaderData<{ id: string; title: string; body: string }>(Astro, import.meta.url);
+const data = getData<{ id: string; title: string; body: string }>(Astro, import.meta.url);
 ---
 
 {data && (
@@ -101,7 +101,7 @@ If multiple components request the same data, use the built-in dedupe helper:
 
 ```astro
 ---
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 import type { LoaderContext } from 'astro-auto-load';
 
 export const load = async (ctx: LoaderContext) => {
@@ -115,7 +115,7 @@ export const load = async (ctx: LoaderContext) => {
   );
 };
 
-const data = getLoaderData(Astro, import.meta.url);
+const data = getData(Astro, import.meta.url);
 ---
 ```
 
@@ -124,7 +124,7 @@ const data = getLoaderData(Astro, import.meta.url);
 ```astro
 ---
 // src/components/CommentList.astro
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 import type { LoaderContext } from 'astro-auto-load';
 
 interface Comment {
@@ -146,7 +146,7 @@ export const load = async (ctx: LoaderContext) => {
   );
 };
 
-const comments = getLoaderData<Comment[]>(Astro, import.meta.url);
+const comments = getData<Comment[]>(Astro, import.meta.url);
 ---
 
 <section class="comments">
@@ -172,7 +172,7 @@ const comments = getLoaderData<Comment[]>(Astro, import.meta.url);
 3. **Runtime**: The middleware runs before rendering, collecting all registered loaders
 4. **Runtime**: All loaders execute in parallel (no waterfalls!)
 5. **Runtime**: Results are stored in `Astro.locals.autoLoad`
-6. **Runtime**: Components retrieve their data using `getLoaderData()`
+6. **Runtime**: Components retrieve their data using `getData()`
 
 ## API Reference
 
@@ -196,7 +196,7 @@ interface LoaderContext {
 }
 ```
 
-### `getLoaderData<T>(astro, moduleUrl)`
+### `getData<T>(astro, moduleUrl)`
 
 Retrieves the loaded data for the current component.
 
@@ -299,16 +299,47 @@ export const onRequest = customAutoLoad;
 
 ## TypeScript
 
-The package includes full TypeScript support. Use the `LoaderContext` and `LoaderResult` types:
+The package includes full TypeScript support with automatic type inference from your loaders.
 
-```ts
-import type { LoaderContext, LoaderResult } from 'astro-auto-load';
+### Infer Types from Loaders
 
-const load = async (ctx: LoaderContext) => {
-  return { hello: 'world' };
+The recommended approach - let TypeScript infer types automatically:
+
+```astro
+---
+import { getData, type Loader } from 'astro-auto-load';
+
+export const load = async (ctx) => {
+  return {
+    name: 'James',
+    age: 38,
+    hobbies: ['coding', 'gaming']
+  };
 };
 
-type MyData = LoaderResult<typeof load>; // { hello: string }
+// Type is automatically inferred from the loader!
+const data = getData<Loader<typeof load>>(Astro, import.meta.url);
+// data.name is string
+// data.age is number
+// data.hobbies is string[]
+---
+```
+
+### Extracting Types
+
+You can extract the loader's return type for reuse:
+
+```ts
+import type { Loader } from 'astro-auto-load';
+
+const load = async (ctx) => ({ count: 42 });
+
+export type Data = Loader<typeof load>; // { count: number }
+
+// Use the type elsewhere
+function processData(data: Data) {
+  console.log(data.count);
+}
 ```
 
 ## Limitations

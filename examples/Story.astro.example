@@ -5,21 +5,12 @@
  * This component demonstrates:
  * 1. Defining a loader function that fetches data
  * 2. Accessing route parameters
- * 3. Retrieving loaded data with type safety
+ * 3. Automatic type inference from the loader
  */
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
-import type { LoaderContext } from 'astro-auto-load';
-
-interface Story {
-  id: string;
-  title: string;
-  body: string;
-  author: string;
-  createdAt: string;
-}
+import { getData, type Loader } from 'astro-auto-load';
 
 // Define the loader - this runs BEFORE the page renders
-export const load = async (ctx: LoaderContext) => {
+export const load = async (ctx) => {
   const storyId = ctx.params.id;
   
   // Use the dedupe helper to prevent duplicate fetches
@@ -27,14 +18,20 @@ export const load = async (ctx: LoaderContext) => {
     async (id: string) => {
       const res = await fetch(`https://api.example.com/stories/${id}`);
       if (!res.ok) throw new Error('Story not found');
-      return res.json() as Promise<Story>;
+      return res.json() as Promise<{
+        id: string;
+        title: string;
+        body: string;
+        author: string;
+        createdAt: string;
+      }>;
     },
     storyId
   );
 };
 
-// Retrieve the data
-const story = getLoaderData<Story>(Astro, import.meta.url);
+// Type is automatically inferred from the loader!
+const story = getData<Loader<typeof load>>(Astro, import.meta.url);
 ---
 
 {story ? (

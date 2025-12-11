@@ -36,7 +36,7 @@ The plugin is now in a **testable and installable state**. All major components 
 - More robust frontmatter injection logic
 
 ### 4. **Fixed Data Injection** ✅
-- Created `getLoaderData()` helper for components to access their data
+- Created `getData()` helper for components to access their data
 - Updated middleware to store data as `Map<string, unknown>` in `Astro.locals.autoLoad`
 - Components use `import.meta.url` to look up their own data
 - Updated type augmentation to reflect actual data structure
@@ -78,7 +78,7 @@ User's Astro Project
 │
 ├── src/components/Story.astro
 │   ├── export const load = async (ctx) => { ... } ← Detected by Vite plugin
-│   └── const data = getLoaderData(Astro, import.meta.url)
+│   └── const data = getData(Astro, import.meta.url)
 │
 └── Build/Runtime Flow:
     1. Vite plugin scans .astro files
@@ -145,7 +145,7 @@ These should be tested in a real Astro project:
 
 1. **SSR Only**: Requires `output: 'server'` or `'hybrid'` in Astro config
 2. **No Caching**: Loaders run on every request (users should add their own caching)
-3. **Module URL Lookup**: Components must pass `import.meta.url` to `getLoaderData()`
+3. **Module URL Lookup**: Components must pass `import.meta.url` to `getData()`
 
 ## Potential Improvements (Future)
 

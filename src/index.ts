@@ -29,7 +29,6 @@ export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegratio
     name: 'astro-auto-load',
     hooks: {
       'astro:config:setup': ({ updateConfig, config, addMiddleware }) => {
-        // Add the Vite plugin for detecting loaders
         updateConfig({
           vite: {
             plugins: [
@@ -40,7 +39,6 @@ export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegratio
           },
         });
 
-        // Automatically inject the middleware
         addMiddleware({
           entrypoint: 'astro-auto-load/middleware',
           order: 'pre',
@@ -50,7 +48,6 @@ export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegratio
   };
 }
 
-// Re-export commonly used utilities
 export { autoLoadMiddleware } from './middleware';
-export { getLoaderData } from './runtime/helpers';
-export type { LoaderContext, LoaderFn, LoaderResult } from './runtime/types';
+export { getData } from './runtime/helpers';
+export type { LoaderContext, LoaderFn, Loader } from './runtime/types';

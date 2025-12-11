@@ -24,7 +24,7 @@ When you install this plugin in a real Astro project, test the following:
 - [ ] Loader function receives correct `ctx.params` from route
 - [ ] Loader function receives correct `ctx.url`
 - [ ] Loader function receives correct `ctx.request`
-- [ ] Data returned from loader is accessible via `getLoaderData()`
+- [ ] Data returned from loader is accessible via `getData()`
 - [ ] Multiple loaders run in parallel (check Network tab timing)
 
 ### Deduplication
@@ -36,7 +36,7 @@ When you install this plugin in a real Astro project, test the following:
 ### TypeScript
 
 - [ ] `LoaderContext` type is available for import
-- [ ] `getLoaderData<T>()` provides correct typing
+- [ ] `getData<T>()` provides correct typing
 - [ ] `Astro.locals.autoLoad` is properly typed
 - [ ] No TypeScript errors in IDE after setup
 
@@ -79,7 +79,7 @@ npm link astro-auto-load
 ```astro
 ---
 // src/components/TestLoader.astro
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 import type { LoaderContext } from 'astro-auto-load';
 
 export const load = async (ctx: LoaderContext) => {
@@ -96,7 +96,7 @@ export const load = async (ctx: LoaderContext) => {
   };
 };
 
-const data = getLoaderData<{
+const data = getData<{
   message: string;
   timestamp: string;
   params: Record<string, string>;
@@ -202,7 +202,7 @@ export function GET() {
 
 ### Data is undefined
 
-- Check that `import.meta.url` is passed to `getLoaderData()`
+- Check that `import.meta.url` is passed to `getData()`
 - Verify loader is returning data
 - Check Network tab for failed requests
 - Ensure loader is registered (check console logs)

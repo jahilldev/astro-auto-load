@@ -29,8 +29,25 @@ export interface LoaderContext {
 export type LoaderFn = (ctx: LoaderContext) => Promise<any>;
 
 /**
- * Extracts the return type of a loader function (awaited).
+ * Internal utility: Extracts the awaited return type of a loader function.
+ *
+ * @internal - Use `Loader<T>` instead for public API
  */
-export type LoaderResult<T extends LoaderFn> = T extends (...args: any[]) => infer R
+type LoaderResult<T extends LoaderFn> = T extends (...args: any[]) => infer R
   ? Awaited<R>
   : never;
+
+/**
+ * Extracts the awaited return type of a loader function.
+ *
+ * Usage:
+ * ```ts
+ * export const load = async () => ({ name: 'James', age: 38 });
+ *
+ * type Data = Loader<typeof load>;
+ * // Data is { name: string; age: number }
+ *
+ * const data = getData<Data>(Astro, import.meta.url);
+ * ```
+ */
+export type Loader<T extends LoaderFn> = LoaderResult<T>;

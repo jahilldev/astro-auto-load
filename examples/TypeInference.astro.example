@@ -1,0 +1,87 @@
+---
+/**
+ * Example showing automatic type inference from loaders
+ * 
+ * The Loader<typeof load> pattern automatically extracts types
+ * from your loader function, keeping types and data in sync!
+ */
+import { getData, type Loader } from 'astro-auto-load';
+
+// Example 1: Simple object return
+export const load = async (ctx) => {
+  return {
+    name: 'James',
+    age: 38,
+    isActive: true,
+    tags: ['developer', 'typescript', 'astro'],
+    metadata: {
+      lastLogin: new Date().toISOString(),
+      loginCount: 42,
+    },
+  };
+};
+
+// Type is automatically inferred! No need to write interfaces
+const data = getData<Loader<typeof load>>(Astro, import.meta.url);
+
+// TypeScript knows:
+// - data.name is string
+// - data.age is number
+// - data.isActive is boolean
+// - data.tags is string[]
+// - data.metadata.lastLogin is string
+// - data.metadata.loginCount is number
+---
+
+<div class="profile">
+  {data && (
+    <>
+      <h1>{data.name}</h1>
+      <p>Age: {data.age}</p>
+      <p>Status: {data.isActive ? 'Active' : 'Inactive'}</p>
+      
+      <div class="tags">
+        {data.tags.map(tag => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+      
+      <div class="metadata">
+        <p>Last login: {data.metadata.lastLogin}</p>
+        <p>Total logins: {data.metadata.loginCount}</p>
+      </div>
+    </>
+  )}
+</div>
+
+<style>
+  .profile {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+  
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+  
+  .tag {
+    padding: 0.25rem 0.75rem;
+    background: #e0e0e0;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .metadata {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    font-size: 0.9rem;
+    color: #666;
+  }
+</style>
+

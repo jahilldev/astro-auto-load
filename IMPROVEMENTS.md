@@ -83,13 +83,13 @@ export default defineConfig({
 ### Using Loaders
 ```astro
 ---
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 
 export const load = async (ctx) => {
   return fetch(`/api/data/${ctx.params.id}`).then(r => r.json());
 };
 
-const data = getLoaderData(Astro, import.meta.url);
+const data = getData(Astro, import.meta.url);
 ---
 
 <div>{data.title}</div>

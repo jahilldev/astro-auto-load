@@ -28,13 +28,13 @@ export const onRequest = sequence(autoLoadMiddleware());
 ```astro
 ---
 // src/components/Story.astro
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 
 export const load = async (ctx) => {
   return fetch(`/api/story/${ctx.params.id}`).then(r => r.json());
 };
 
-const data = getLoaderData(Astro, import.meta.url);
+const data = getData(Astro, import.meta.url);
 ---
 <article>{data.title}</article>
 ```
@@ -60,13 +60,13 @@ export default defineConfig({
 ```astro
 ---
 // src/components/Story.astro
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import { getData } from 'astro-auto-load/runtime/helpers';
 
 export const load = async (ctx) => {
   return fetch(`/api/story/${ctx.params.id}`).then(r => r.json());
 };
 
-const data = getLoaderData(Astro, import.meta.url);
+const data = getData(Astro, import.meta.url);
 ---
 <article>{data.title}</article>
 ```

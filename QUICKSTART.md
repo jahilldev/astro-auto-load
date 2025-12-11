@@ -30,24 +30,17 @@ Create `src/components/UserProfile.astro`:
 
 ```astro
 ---
-import { getLoaderData } from 'astro-auto-load/runtime/helpers';
-import type { LoaderContext } from 'astro-auto-load';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { getData, type Loader } from 'astro-auto-load';
 
 // This function runs BEFORE the page renders
-export const load = async (ctx: LoaderContext) => {
+export const load = async (ctx) => {
   const userId = ctx.params.id;
   const res = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
-  return res.json() as Promise<User>;
+  return res.json() as Promise<{ id: string; name: string; email: string }>;
 };
 
-// Retrieve the loaded data
-const user = getLoaderData<User>(Astro, import.meta.url);
+// Type is automatically inferred from the loader!
+const user = getData<Loader<typeof load>>(Astro, import.meta.url);
 ---
 
 {user ? (
@@ -103,7 +96,7 @@ Visit `http://localhost:4321/users/1` to see it in action!
 3. It automatically registered the loader function
 4. When you visit `/users/1`, the middleware runs the loader with `params.id = "1"`
 5. The data is fetched in parallel with any other loaders on the page
-6. The component accesses its data via `getLoaderData()`
+6. The component accesses its data via `getData()`
 
 ## Next Steps
 
@@ -114,17 +107,19 @@ Visit `http://localhost:4321/users/1` to see it in action!
 ## Troubleshooting
 
 **Q: My loader isn't running**
+
 - Make sure you have `output: 'server'` or `output: 'hybrid'` in your Astro config
 - Verify the integration is added: `integrations: [autoLoad()]`
 - Check that your loader is exported: `export const load = ...`
 - Look in the browser console for any errors
 
 **Q: I'm getting TypeScript errors**
+
 - Add `/// <reference types="astro-auto-load/augment" />` to `src/env.d.ts`
 - Make sure you've run `npm run build` if developing locally
 
 **Q: Data is undefined in my component**
-- Ensure you're passing `import.meta.url` to `getLoaderData()`
+
+- Ensure you're passing `import.meta.url` to `getData()`
 - Check the Network tab to see if your API calls are succeeding
 - Verify the loader function is returning data (not throwing errors)
-
