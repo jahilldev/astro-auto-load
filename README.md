@@ -1,0 +1,326 @@
+# astro-auto-load
+
+Automatic component-level data loading for Astro SSR. Co-locate your data fetching logic with your components while eliminating waterfalls and duplicate requests.
+
+## The Problem
+
+In typical Astro SSR apps, you face a choice:
+
+1. **Fetch data in the page** - Causes waterfalls when components need different data
+2. **Props drilling** - Pass data from page to deeply nested components (verbose and brittle)
+3. **Fetch in components** - Simple API, but can't `await` in component scripts, leading to duplicate fetches
+
+## The Solution
+
+`astro-auto-load` lets you define `load` functions directly in your components. The integration:
+
+✅ **Collects all loaders** before rendering  
+✅ **Runs them in parallel** (no waterfalls)  
+✅ **Deduplicates requests** automatically  
+✅ **Provides type-safe data** to your components
+
+## Installation
+
+```bash
+npm install astro-auto-load
+```
+
+## Setup
+
+### 1. Add the integration
+
+In `astro.config.mjs`:
+
+```js
+import { defineConfig } from 'astro/config';
+import autoLoad from 'astro-auto-load';
+
+export default defineConfig({
+  output: 'server', // or 'hybrid' - required for SSR
+  integrations: [autoLoad()],
+});
+```
+
+**That's it!** The middleware is automatically injected. No manual setup required.
+
+### 2. (Optional) Add TypeScript support
+
+Create `src/env.d.ts` if it doesn't exist:
+
+```ts
+/// <reference types="astro/client" />
+/// <reference types="astro-auto-load/augment" />
+```
+
+## Usage
+
+### Basic Example
+
+Define a loader in your component:
+
+```astro
+---
+// src/components/Story.astro
+import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import type { LoaderContext } from 'astro-auto-load';
+
+// Define your loader - it receives route params, URL, request, etc.
+export const load = async (ctx: LoaderContext) => {
+  const res = await fetch(`https://api.example.com/stories/${ctx.params.id}`);
+  return res.json();
+};
+
+// Retrieve the data that was loaded
+const data = getLoaderData<{ id: string; title: string; body: string }>(Astro, import.meta.url);
+---
+
+{data && (
+  <article>
+    <h2>{data.title}</h2>
+    <p>{data.body}</p>
+  </article>
+)}
+```
+
+### Using Route Parameters
+
+```astro
+---
+// src/pages/posts/[id].astro
+import Story from '@/components/Story.astro';
+---
+
+<Story />
+```
+
+The `ctx.params` will contain `{ id: "123" }` when visiting `/posts/123`.
+
+### Deduplication
+
+If multiple components request the same data, use the built-in dedupe helper:
+
+```astro
+---
+import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import type { LoaderContext } from 'astro-auto-load';
+
+export const load = async (ctx: LoaderContext) => {
+  // This will only execute once per request, even if used by multiple components
+  return ctx.dedupe(
+    async (id: string) => {
+      const res = await fetch(`https://api.example.com/stories/${id}`);
+      return res.json();
+    },
+    ctx.params.id
+  );
+};
+
+const data = getLoaderData(Astro, import.meta.url);
+---
+```
+
+### Full Example with Comments
+
+```astro
+---
+// src/components/CommentList.astro
+import { getLoaderData } from 'astro-auto-load/runtime/helpers';
+import type { LoaderContext } from 'astro-auto-load';
+
+interface Comment {
+  id: string;
+  author: string;
+  body: string;
+}
+
+export const load = async (ctx: LoaderContext) => {
+  const storyId = ctx.params.id;
+
+  // Dedupe ensures this only runs once even if multiple CommentList components exist
+  return ctx.dedupe(
+    async (id: string) => {
+      const res = await fetch(`https://api.example.com/stories/${id}/comments`);
+      return res.json() as Promise<Comment[]>;
+    },
+    storyId
+  );
+};
+
+const comments = getLoaderData<Comment[]>(Astro, import.meta.url);
+---
+
+<section class="comments">
+  <h3>Comments</h3>
+  {comments && comments.length > 0 ? (
+    <ul>
+      {comments.map((comment) => (
+        <li key={comment.id}>
+          <strong>{comment.author}:</strong> {comment.body}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p>No comments yet.</p>
+  )}
+</section>
+```
+
+## How It Works
+
+1. **Build-time**: The Vite plugin scans your `.astro` components for `export const load` functions
+2. **Build-time**: It automatically injects code to register each loader
+3. **Runtime**: The middleware runs before rendering, collecting all registered loaders
+4. **Runtime**: All loaders execute in parallel (no waterfalls!)
+5. **Runtime**: Results are stored in `Astro.locals.autoLoad`
+6. **Runtime**: Components retrieve their data using `getLoaderData()`
+
+## API Reference
+
+### `LoaderContext`
+
+The context object passed to every loader function:
+
+```ts
+interface LoaderContext {
+  /** Route parameters (e.g., { id: "123" } for /posts/[id]) */
+  params: Record<string, string>;
+
+  /** Full URL object */
+  url: URL;
+
+  /** Original Request object */
+  request: Request;
+
+  /** Dedupe helper to prevent duplicate async calls */
+  dedupe: <T>(fn: (...args: any[]) => Promise<T>, ...args: any[]) => Promise<T>;
+}
+```
+
+### `getLoaderData<T>(astro, moduleUrl)`
+
+Retrieves the loaded data for the current component.
+
+- `astro`: The Astro global object
+- `moduleUrl`: Pass `import.meta.url`
+- Returns: The data returned by your loader, or `undefined` if not found
+
+### `autoLoadMiddleware()`
+
+Creates the middleware that executes all loaders before rendering.
+
+## Advanced Usage
+
+### Custom Context
+
+You can extend the `LoaderContext` type via module augmentation:
+
+```ts
+// src/types/astro-auto-load.d.ts
+import 'astro-auto-load/runtime/types';
+
+declare module 'astro-auto-load/runtime/types' {
+  interface LoaderContext {
+    // Add custom properties
+    db: DatabaseClient;
+    auth: AuthService;
+  }
+}
+```
+
+Then create a custom context factory:
+
+```ts
+// src/lib/custom-context.ts
+import { createLoaderContext as baseCreateContext } from 'astro-auto-load/runtime/context';
+import type { LoaderContext } from 'astro-auto-load/runtime/types';
+
+export function createCustomLoaderContext(
+  params: Record<string, string>,
+  request: Request,
+): LoaderContext {
+  const baseContext = baseCreateContext(params, request);
+
+  return {
+    ...baseContext,
+    db: getDbClient(),
+    auth: getAuthService(),
+  };
+}
+```
+
+### Custom Middleware Composition
+
+The middleware is automatically injected by the integration. If you need to compose it with your own middleware:
+
+```ts
+// src/middleware.ts
+import { defineMiddleware, sequence } from 'astro:middleware';
+import { autoLoadMiddleware } from 'astro-auto-load/middleware';
+
+const myMiddleware = defineMiddleware(async (context, next) => {
+  // Your custom logic
+  console.log('Request:', context.url.pathname);
+  return next();
+});
+
+// Compose with the auto-load middleware
+export const onRequest = sequence(myMiddleware, autoLoadMiddleware());
+```
+
+Note: If you manually export `onRequest` from `src/middleware.ts`, you'll need to include `autoLoadMiddleware()` yourself. Otherwise, the integration injects it automatically.
+
+### Skipping Routes
+
+The middleware automatically skips `/_astro`, `/assets`, and `/api` paths. To customize this behavior, create your own wrapper:
+
+```ts
+// src/middleware.ts
+import { defineMiddleware, sequence } from 'astro:middleware';
+import { runAllLoadersForRequest } from 'astro-auto-load/runtime/orchestrator';
+
+const customAutoLoad = defineMiddleware(async (context, next) => {
+  // Custom skip logic
+  if (context.url.pathname.startsWith('/admin')) {
+    return next();
+  }
+
+  const params: Record<string, string> = {};
+  for (const [key, value] of Object.entries(context.params)) {
+    if (value !== undefined) params[key] = value;
+  }
+
+  const { dataByModule } = await runAllLoadersForRequest(params, context.request);
+  context.locals.autoLoad = dataByModule;
+  return next();
+});
+
+export const onRequest = customAutoLoad;
+```
+
+## TypeScript
+
+The package includes full TypeScript support. Use the `LoaderContext` and `LoaderResult` types:
+
+```ts
+import type { LoaderContext, LoaderResult } from 'astro-auto-load';
+
+const load = async (ctx: LoaderContext) => {
+  return { hello: 'world' };
+};
+
+type MyData = LoaderResult<typeof load>; // { hello: string }
+```
+
+## Limitations
+
+- Only works in SSR mode (not static builds)
+- Loaders run on every request (consider adding your own caching layer)
+- Component must use `import.meta.url` to look up its own data
+
+## License
+
+MIT
+
+## Contributing
+
+Issues and PRs welcome! This is an experimental integration.

@@ -1,0 +1,63 @@
+{
+  "name": "astro-auto-load",
+  "version": "0.1.0",
+  "description": "Automatic component-level loaders for Astro SSR (parallel, deduped, plug-and-play).",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware.d.ts",
+      "import": "./dist/middleware.js"
+    },
+    "./runtime/registry": {
+      "types": "./dist/runtime/registry.d.ts",
+      "import": "./dist/runtime/registry.js"
+    },
+    "./runtime/types": {
+      "types": "./dist/runtime/types.d.ts",
+      "import": "./dist/runtime/types.js"
+    },
+    "./runtime/context": {
+      "types": "./dist/runtime/context.d.ts",
+      "import": "./dist/runtime/context.js"
+    },
+    "./runtime/helpers": {
+      "types": "./dist/runtime/helpers.d.ts",
+      "import": "./dist/runtime/helpers.js"
+    },
+    "./runtime/orchestrator": {
+      "types": "./dist/runtime/orchestrator.d.ts",
+      "import": "./dist/runtime/orchestrator.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/augment.d.ts"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "ssr",
+    "data-loading",
+    "loader"
+  ],
+  "author": "James Hill",
+  "license": "MIT",
+  "peerDependencies": {
+    "astro": "^4.0.0 || ^5.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "astro": "^5.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

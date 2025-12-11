@@ -1,0 +1,9 @@
+src/
+examples/
+node_modules/
+.vscode/
+.idea/
+*.log
+tsconfig.json
+.DS_Store
+
