@@ -4,6 +4,11 @@ interface PluginOptions {
   root: string;
 }
 
+const injectedCode = `
+import * as __autoLoad from "astro-auto-load/runtime";
+__autoLoad.registerLoader(import.meta.url, loader);
+`;
+
 /**
  * Vite plugin that detects components with `export const loader` or `export async function loader`
  * and automatically:
@@ -25,12 +30,6 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
       const hasLoaderExport = /export\s+(const|async\s+function)\s+loader\s*[=(]/m.test(code);
 
       if (!hasLoaderExport) return null;
-
-      const injectedCode = `
-import { registerLoader } from "astro-auto-load/runtime";
-// Register loader for middleware discovery
-registerLoader(import.meta.url, loader);
-      `;
 
       let transformed = code;
 
