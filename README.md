@@ -45,7 +45,7 @@ export default defineConfig({
 
 > **Note:** If you have an existing `src/middleware.ts` file, you'll need to manually add `autoLoadMiddleware` to your middleware chain. See [Custom Middleware Composition](#custom-middleware-composition) below.
 
-### 2. (Optional) Add TypeScript support
+### 2. Add TypeScript support
 
 Create `src/env.d.ts` if it doesn't exist:
 
@@ -53,6 +53,8 @@ Create `src/env.d.ts` if it doesn't exist:
 /// <reference types="astro/client" />
 /// <reference types="astro-auto-load/augment" />
 ```
+
+> **Note:** The augment reference enables automatic type inference for the `loader` function's `context` parameter. Without it, you'll need to manually type `context: LoaderContext`.
 
 ## Usage
 
@@ -105,9 +107,8 @@ If multiple components request the same data, use the built-in dedupe helper wit
 
 ```astro
 ---
-import type { LoaderContext } from 'astro-auto-load/runtime';
-
-export const loader = async (context: LoaderContext) => {
+export const loader = async (context) => {
+  // context is automatically typed as LoaderContext
   // Dedupe by unique key - only executes once per unique key per request
   return context.dedupe(
     `story-${context.params.id}`, // Custom cache key
