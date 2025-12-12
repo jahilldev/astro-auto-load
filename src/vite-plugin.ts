@@ -13,7 +13,7 @@ const __autoLoadModuleUrl = import.meta.url;
  * Vite plugin that detects components with `export const loader` or `export async function loader`
  * and automatically:
  * 1. Registers them for middleware discovery
- * 2. Transforms getLoaderData() calls to pass Astro and import.meta.url automatically
+ * 2. Transforms getLoaderData() calls to pass the correct parameters
  *
  * This enables both regular SSR and Server Islands to work seamlessly,
  * as Astro runs middleware for both contexts.
@@ -37,12 +37,12 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
       transformed = injectedCode + transformed;
 
       // Find where the loader is defined and inject the registration call after it
-      const loaderDefMatch = transformed.match(
+      const loaderMatch = transformed.match(
         /((?:const|let|var)\s+loader\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
       );
 
-      if (loaderDefMatch && loaderDefMatch.index !== undefined) {
-        const position = loaderDefMatch.index + loaderDefMatch[0].length;
+      if (loaderMatch && loaderMatch.index !== undefined) {
+        const position = loaderMatch.index + loaderMatch[0].length;
 
         transformed = `
           ${transformed.slice(0, position)}

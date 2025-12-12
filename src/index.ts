@@ -50,4 +50,4 @@ export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegratio
 
 export { autoLoadMiddleware } from './middleware.js';
 export { getLoaderData } from './runtime/helpers.js';
-export type { LoaderContext, LoaderFn, Loader } from './runtime/types.js';
+export type { Context, Loader } from './runtime/types.js';

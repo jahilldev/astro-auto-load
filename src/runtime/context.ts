@@ -1,4 +1,4 @@
-import type { LoaderContext } from './types.js';
+import type { Context } from './types.js';
 import { promiseDedupe } from './dedupe.js';
 
 interface LoaderContextOptions {
@@ -17,12 +17,12 @@ interface LoaderContextOptions {
  * - dedupe: A deduplication helper to prevent duplicate async calls
  * - extend: A function to add custom properties while keeping all required fields.
  */
-export function createLoaderContext(options: LoaderContextOptions): LoaderContext {
+export function createLoaderContext(options: LoaderContextOptions): Context {
   const { params, request, extend } = options;
   const url = new URL(request.url);
   const dedupe = promiseDedupe();
 
-  const context: LoaderContext = {
+  const context: Context = {
     params,
     url,
     request,

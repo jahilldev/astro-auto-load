@@ -45,7 +45,7 @@ export default defineConfig({
 
 > **Note:** If you have an existing `src/middleware.ts` file, you'll need to manually add `autoLoadMiddleware` to your middleware chain. See [Custom Middleware Composition](#custom-middleware-composition) below.
 
-### 2. (Optional) Add TypeScript support
+### 2. Add TypeScript support (optional)
 
 Create `src/env.d.ts` if it doesn't exist:
 
@@ -53,6 +53,8 @@ Create `src/env.d.ts` if it doesn't exist:
 /// <reference types="astro/client" />
 /// <reference types="astro-auto-load/augment" />
 ```
+
+> **Note:** This reference is required for TypeScript support and ensures `Astro.locals` is properly typed.
 
 ## Usage
 
@@ -63,18 +65,18 @@ Define a loader in your component:
 ```astro
 ---
 // src/components/Story.astro
-import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+import { getLoaderData, type Loader, type Context } from 'astro-auto-load/runtime';
 
-// Define shorthand type for DX or re-use elsewhere in your app
+// Define shorthand type for type-safe data access
 type Data = Loader<typeof loader>;
 
-// Define your loader - it receives route params, URL, request, etc.
-export const loader = async (context) => {
+// Define your loader
+export const loader = async (context: Context) => {
   const res = await fetch(`https://api.example.com/stories/${context.params.id}`);
   return res.json() as Promise<{ id: string; title: string; body: string }>;
 };
 
-// Typesafe inferrence for loader
+// Type-safe data retrieval
 const data = getLoaderData<Data>();
 ---
 
@@ -105,9 +107,9 @@ If multiple components request the same data, use the built-in dedupe helper wit
 
 ```astro
 ---
-import type { LoaderContext } from 'astro-auto-load/runtime';
+import type { Context } from 'astro-auto-load/runtime';
 
-export const loader = async (context: LoaderContext) => {
+export const loader = async (context: Context) => {
   // Dedupe by unique key - only executes once per unique key per request
   return context.dedupe(
     `story-${context.params.id}`, // Custom cache key
@@ -133,12 +135,12 @@ The function will only execute once per unique key within a request, even if mul
 
 ## API Reference
 
-### `LoaderContext`
+### `Context`
 
 The context object passed to every loader function:
 
 ```ts
-interface LoaderContext {
+interface Context {
   /** Route parameters (e.g., { id: "123" } for /posts/[id]) */
   params: Record<string, string>;
 
@@ -165,16 +167,16 @@ The middleware handler that executes all loaders before rendering.
 
 ### Custom Context
 
-You can add custom properties to the `LoaderContext` that all loaders receive. This is useful for providing database clients, auth services, or other shared utilities.
+You can add custom properties to the `Context` that all loaders receive. This is useful for providing database clients, auth services, or other shared utilities.
 
-**Step 1: Augment the LoaderContext type**
+**Step 1: Augment the Context type**
 
 ```ts
 // src/loader.d.ts
 import 'astro-auto-load/runtime/types';
 
 declare module 'astro-auto-load/runtime/types' {
-  interface LoaderContext {
+  interface Context {
     // Add your custom properties
     db: DatabaseClient;
     auth: AuthService;
@@ -338,7 +340,7 @@ function processData(data: Data) {
 
 - **Only works in SSR mode** (not static builds)
 - **Loaders run on every request** - Consider adding your own caching layer for frequently accessed data
-- **Loaders cannot access props** - Loaders execute at the middleware level (before components render), so they only have access to the `LoaderContext` object (route params, URL, request).
+- **Loaders cannot access props** - Loaders execute at the middleware level (before components render), so they only have access to the `Context` object (route params, URL, request).
 
 ### Server Islands
 
