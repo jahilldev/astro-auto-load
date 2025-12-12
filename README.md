@@ -101,26 +101,26 @@ The `context.params` will contain `{ id: "123" }` when visiting `/posts/123`.
 
 ### Deduplication
 
-If multiple components request the same data, use the built-in dedupe helper:
+If multiple components request the same data, use the built-in dedupe helper with a unique key:
 
 ```astro
 ---
-import { getLoaderData, type LoaderContext } from 'astro-auto-load/runtime';
+import type { LoaderContext } from 'astro-auto-load/runtime';
 
 export const loader = async (context: LoaderContext) => {
-  // This will only execute once per request, even if used by multiple components
+  // Dedupe by unique key - only executes once per unique key per request
   return context.dedupe(
-    async (id: string) => {
-      const res = await fetch(`https://api.example.com/stories/${id}`);
+    `story-${context.params.id}`, // Custom cache key
+    async () => {
+      const res = await fetch(`https://api.example.com/stories/${context.params.id}`);
       return res.json();
-    },
-    context.params.id
+    }
   );
 };
-
-const data = getLoaderData();
 ---
 ```
+
+The function will only execute once per unique key within a request, even if multiple components use the same loader.
 
 ## How It Works
 
@@ -149,7 +149,7 @@ interface LoaderContext {
   request: Request;
 
   /** Dedupe helper to prevent duplicate async calls */
-  dedupe: <T>(fn: (...args: any[]) => Promise<T>, ...args: any[]) => Promise<T>;
+  dedupe: <T>(key: string, fn: () => Promise<T>) => Promise<T>;
 }
 ```
 
@@ -271,12 +271,18 @@ const customAutoLoad = defineMiddleware(async (context, next) => {
   }
 
   const params: Record<string, string> = {};
+
   for (const [key, value] of Object.entries(context.params)) {
     if (value !== undefined) params[key] = value;
   }
 
-  const { dataByModule } = await runAllLoadersForRequest(params, context.request);
+  const { dataByModule } = await runAllLoadersForRequest({
+    params,
+    request: context.request,
+  });
+
   context.locals.autoLoad = dataByModule;
+
   return next();
 });
 
@@ -297,9 +303,9 @@ import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
 
 export const loader = async (context) => {
   return {
-    name: 'James',
-    age: 38,
-    hobbies: ['coding', 'gaming']
+    name: 'Hugo',
+    age: 42,
+    hobbies: ['coding', 'cats']
   };
 };
 

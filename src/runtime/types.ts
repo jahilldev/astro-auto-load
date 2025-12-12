@@ -12,7 +12,7 @@ export interface LoaderContext {
   /** The original Request object */
   request: Request;
   /** Helper for deduplicating async calls within a request */
-  dedupe: <T>(fn: (...args: any[]) => Promise<T>, ...args: any[]) => Promise<T>;
+  dedupe: <T>(key: string, fn: () => Promise<T>) => Promise<T>;
 }
 
 /**
