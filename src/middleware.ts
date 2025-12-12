@@ -15,37 +15,32 @@ import { runAllLoadersForRequest } from './runtime/orchestrator';
  * import { autoLoadMiddleware } from 'astro-auto-load/middleware';
  * import { sequence } from 'astro:middleware';
  *
- * export const onRequest = sequence(autoLoadMiddleware(), yourOtherMiddleware);
+ * export const onRequest = sequence(autoLoadMiddleware, yourOtherMiddleware);
  * ```
  */
-export function autoLoadMiddleware(): MiddlewareHandler {
-  return async (context, next) => {
-    // Skip assets and API routes
-    const path = context.url.pathname;
-    if (path.startsWith('/_astro') || path.startsWith('/assets') || path.startsWith('/api')) {
-      return next();
-    }
+export const autoLoadMiddleware: MiddlewareHandler = async (context, next) => {
+  const path = context.url.pathname;
 
-    // Filter out undefined values from params
-    const params: Record<string, string> = {};
-    for (const [key, value] of Object.entries(context.params)) {
-      if (value !== undefined) {
-        params[key] = value;
-      }
-    }
-    const request = context.request;
-
-    const { dataByModule } = await runAllLoadersForRequest({
-      params,
-      request,
-    });
-
-    // Store the map directly so components can look themselves up
-    context.locals.autoLoad = dataByModule;
-
+  if (path.startsWith('/_astro') || path.startsWith('/assets') || path.startsWith('/api')) {
     return next();
-  };
-}
+  }
 
-// Export the default middleware for Astro's automatic injection
-export const onRequest = autoLoadMiddleware();
+  const params: Record<string, string> = {};
+  for (const [key, value] of Object.entries(context.params)) {
+    if (value !== undefined) {
+      params[key] = value;
+    }
+  }
+  const request = context.request;
+
+  const { dataByModule } = await runAllLoadersForRequest({
+    params,
+    request,
+  });
+
+  context.locals.autoLoad = dataByModule;
+
+  return next();
+};
+
+export const onRequest = autoLoadMiddleware;
