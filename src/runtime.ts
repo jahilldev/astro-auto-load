@@ -10,7 +10,7 @@
  */
 
 export { getLoaderData } from './runtime/helpers.js';
-export { getRegistry } from './runtime/registry.js';
+export { getRegistry, registerLoader } from './runtime/registry.js';
 export { promiseDedupe } from './runtime/dedupe.js';
 export { createLoaderContext } from './runtime/context.js';
 export { runAllLoadersForRequest } from './runtime/orchestrator.js';

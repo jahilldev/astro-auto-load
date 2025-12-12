@@ -16,7 +16,7 @@ In typical Astro SSR apps, you face a choice:
 
 ✅ **Collects all loaders** before rendering  
 ✅ **Runs them in parallel** (no waterfalls)  
-✅ **Deduplicates requests** automatically  
+✅ **Deduplicates promises** via utility function  
 ✅ **Provides type-safe data** to your components
 
 ## Installation

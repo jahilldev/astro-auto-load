@@ -27,7 +27,7 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
       if (!hasLoaderExport) return null;
 
       const injectedCode = `
-import { registerLoader } from "astro-auto-load/runtime/registry";
+import { registerLoader } from "astro-auto-load/runtime";
 
 // Register loader for middleware discovery
 registerLoader(import.meta.url, loader);

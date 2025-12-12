@@ -1,6 +1,6 @@
 {
   "name": "astro-auto-load",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Automatic component-level loaders for Astro SSR (parallel, deduped, plug-and-play).",
   "type": "module",
   "exports": {
@@ -16,13 +16,8 @@
       "types": "./dist/middleware.d.ts",
       "import": "./dist/middleware.js"
     },
-    "./runtime/orchestrator": {
-      "types": "./dist/runtime/orchestrator.d.ts",
-      "import": "./dist/runtime/orchestrator.js"
-    },
-    "./runtime/context": {
-      "types": "./dist/runtime/context.d.ts",
-      "import": "./dist/runtime/context.js"
+    "./augment": {
+      "types": "./src/augment.d.ts"
     }
   },
   "files": [
