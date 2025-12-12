@@ -7,14 +7,16 @@ import type { AstroGlobal } from 'astro';
  *
  * ```astro
  * ---
- * import { getData, type Loader } from 'astro-auto-load/runtime';
+ * import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+ *
+ * type Data = Loader<typeof loader>; // shorthand use, or export for use elsewhere
  *
  * export const loader = async (ctx) => {
  *   return { title: 'Hello', count: 42 };
  * };
  *
  * // Call with no arguments - Vite plugin injects them automatically
- * const data = getData<Loader<typeof loader>>();
+ * const data = getLoaderData<Data>();
  * ---
  * ```
  *
@@ -22,7 +24,10 @@ import type { AstroGlobal } from 'astro';
  * @param moduleUrl - The module URL (optional - auto-injected by Vite plugin)
  * @returns The loader data for this component, or undefined if not found
  */
-export function getData<T = unknown>(astro?: AstroGlobal, moduleUrl?: string): T | undefined {
+export function getLoaderData<T = unknown>(
+  astro?: AstroGlobal,
+  moduleUrl?: string,
+): T | undefined {
   if (!astro || !moduleUrl) {
     return undefined;
   }

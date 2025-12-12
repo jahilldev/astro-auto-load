@@ -63,7 +63,10 @@ Define a loader in your component:
 ```astro
 ---
 // src/components/Story.astro
-import { getData, type Loader } from 'astro-auto-load/runtime';
+import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+
+// Define shorthand type for DX or re-use elsewhere in your app
+type Data = Loader<typeof loader>;
 
 // Define your loader - it receives route params, URL, request, etc.
 export const loader = async (ctx) => {
@@ -71,8 +74,8 @@ export const loader = async (ctx) => {
   return res.json() as Promise<{ id: string; title: string; body: string }>;
 };
 
-// Type is automatically inferred from the loader!
-const data = getData<Loader<typeof loader>>();
+// Typesafe inferrence for loader
+const data = getLoaderData<Data>();
 ---
 
 {data && (
@@ -115,7 +118,7 @@ export const loader = async (ctx: LoaderContext) => {
   );
 };
 
-const data = getData();
+const data = getLoaderData();
 ---
 ```
 
@@ -265,7 +268,7 @@ The recommended approach - let TypeScript infer types automatically:
 
 ```astro
 ---
-import { getData, type Loader } from 'astro-auto-load/runtime';
+import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
 
 export const loader = async (ctx) => {
   return {
@@ -276,7 +279,7 @@ export const loader = async (ctx) => {
 };
 
 // Type is automatically inferred from the loader!
-const data = getData<Loader<typeof loader>>();
+const data = getLoaderData<Loader<typeof loader>>();
 // data.name is string
 // data.age is number
 // data.hobbies is string[]

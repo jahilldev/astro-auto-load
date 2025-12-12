@@ -8,7 +8,7 @@ interface PluginOptions {
  * Vite plugin that detects components with `export const loader` or `export async function loader`
  * and automatically:
  * 1. Registers them for middleware discovery
- * 2. Transforms getData() calls to pass Astro and import.meta.url automatically
+ * 2. Transforms getLoaderData() calls to pass Astro and import.meta.url automatically
  *
  * This enables both regular SSR and Server Islands to work seamlessly,
  * as Astro runs middleware for both contexts.
@@ -43,15 +43,14 @@ registerLoader(import.meta.url, loader);
         transformed = `---\n${injectedCode}\n---\n${transformed}`;
       }
 
-      // Replace getData() calls with getData(Astro, import.meta.url)
       transformed = transformed.replace(
-        /getData\s*<([^>]+)>\s*\(\s*\)/g,
-        'getData<$1>(Astro, import.meta.url)',
+        /getLoaderData\s*<([^>]+)>\s*\(\s*\)/g,
+        'getLoaderData<$1>(Astro, import.meta.url)',
       );
 
       transformed = transformed.replace(
-        /getData\s*\(\s*\)/g,
-        'getData(Astro, import.meta.url)',
+        /getLoaderData\s*\(\s*\)/g,
+        'getLoaderData(Astro, import.meta.url)',
       );
 
       return { code: transformed, map: null };
