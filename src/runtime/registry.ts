@@ -1,4 +1,4 @@
-import type { LoaderFn } from './types';
+import type { LoaderFn } from './types.js';
 
 const registry = new Map<string, LoaderFn>();
 

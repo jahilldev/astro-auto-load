@@ -1,5 +1,5 @@
 import type { AstroIntegration } from 'astro';
-import { astroAutoLoadVitePlugin } from './vite-plugin';
+import { astroAutoLoadVitePlugin } from './vite-plugin.js';
 
 export type AutoLoadOptions = {};
 
@@ -48,6 +48,6 @@ export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegratio
   };
 }
 
-export { autoLoadMiddleware } from './middleware';
-export { getLoaderData } from './runtime/helpers';
-export type { LoaderContext, LoaderFn, Loader } from './runtime/types';
+export { autoLoadMiddleware } from './middleware.js';
+export { getLoaderData } from './runtime/helpers.js';
+export type { LoaderContext, LoaderFn, Loader } from './runtime/types.js';

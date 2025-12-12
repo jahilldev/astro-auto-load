@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'astro';
-import { runAllLoadersForRequest } from './runtime/orchestrator';
+import { runAllLoadersForRequest } from './runtime/orchestrator.js';
 
 /**
  * Middleware that runs all registered loaders before rendering the page.

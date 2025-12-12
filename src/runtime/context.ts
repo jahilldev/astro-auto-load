@@ -1,5 +1,5 @@
-import type { LoaderContext } from './types';
-import { promiseDedupe } from './dedupe';
+import type { LoaderContext } from './types.js';
+import { promiseDedupe } from './dedupe.js';
 
 interface LoaderContextOptions {
   params: Record<string, string>;

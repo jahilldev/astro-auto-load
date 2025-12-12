@@ -1,6 +1,6 @@
 {
   "name": "astro-auto-load",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Automatic component-level loaders for Astro SSR (parallel, deduped, plug-and-play).",
   "type": "module",
   "exports": {

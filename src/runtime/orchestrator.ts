@@ -1,6 +1,6 @@
-import { getRegistry } from './registry';
-import { createLoaderContext } from './context';
-import type { LoaderContext } from './types';
+import { getRegistry } from './registry.js';
+import { createLoaderContext } from './context.js';
+import type { LoaderContext } from './types.js';
 
 export interface OrchestratorResult {
   context: LoaderContext;
