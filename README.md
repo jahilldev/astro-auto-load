@@ -72,7 +72,7 @@ export const loader = async (ctx) => {
 };
 
 // Type is automatically inferred from the loader!
-const data = getData<Loader<typeof loader>>(Astro, import.meta.url);
+const data = getData<Loader<typeof loader>>();
 ---
 
 {data && (
@@ -115,7 +115,7 @@ export const loader = async (ctx: LoaderContext) => {
   );
 };
 
-const data = getData(Astro, import.meta.url);
+const data = getData();
 ---
 ```
 
@@ -280,7 +280,7 @@ export const loader = async (ctx) => {
 };
 
 // Type is automatically inferred from the loader!
-const data = getData<Loader<typeof loader>>(Astro, import.meta.url);
+const data = getData<Loader<typeof loader>>();
 // data.name is string
 // data.age is number
 // data.hobbies is string[]
@@ -306,9 +306,23 @@ function processData(data: Data) {
 
 ## Limitations
 
-- Only works in SSR mode (not static builds)
-- Loaders run on every request (consider adding your own caching layer)
-- Component must use `import.meta.url` to look up its own data
+- **Only works in SSR mode** (not static builds)
+- **Loaders run on every request** - Consider adding your own caching layer for frequently accessed data
+
+### Server Islands
+
+**✅ Fully Supported!**
+
+Server Islands work automatically because Astro runs middleware for Server Island requests. No special configuration needed!
+
+**How it works:**
+
+- **Regular SSR pages:** Middleware runs → Pre-loads all loaders in parallel → Components get data via `getData()`
+- **Server Islands:** Middleware runs (on the Server Island request) → Pre-loads loaders → Components get data via `getData()`
+
+The Vite plugin automatically registers all loaders so middleware can discover them. Whether your component renders in the initial page or as a Server Island, the data loading just works! ✨
+
+See [SERVER_ISLANDS.md](./SERVER_ISLANDS.md) for more details and nested component examples.
 
 ## License
 

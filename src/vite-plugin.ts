@@ -5,8 +5,13 @@ interface PluginOptions {
 }
 
 /**
- * Vite plugin that detects components with `export const loader` and
- * automatically registers them in the loader registry.
+ * Vite plugin that detects components with `export const loader` or `export async function loader`
+ * and automatically:
+ * 1. Registers them for middleware discovery
+ * 2. Transforms getData() calls to pass Astro and import.meta.url automatically
+ *
+ * This enables both regular SSR and Server Islands to work seamlessly,
+ * as Astro runs middleware for both contexts.
  */
 export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
   return {
@@ -17,26 +22,39 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
       if (!id.endsWith('.astro')) return null;
 
       // Check for 'export const loader' or 'export async function loader' in frontmatter
-      // We use regex since the AST parser doesn't expose export info directly
       const hasLoaderExport = /export\s+(const|async\s+function)\s+loader\s*[=(]/m.test(code);
 
       if (!hasLoaderExport) return null;
 
-      // More robust frontmatter injection
-      const frontmatterMatch = code.match(/^---\s*\n/);
+      const injectedCode = `
+import { registerLoader } from "astro-auto-load/runtime/registry";
 
+// Register loader for middleware discovery
+registerLoader(import.meta.url, loader);
+`;
+
+      let transformed = code;
+
+      // Inject registration
+      const frontmatterMatch = transformed.match(/^---\s*\n/);
       if (frontmatterMatch) {
-        // Component has frontmatter - inject after opening ---
-        const injected = code.replace(
-          /^---\s*\n/,
-          `---\nimport { registerLoader } from "astro-auto-load/runtime/registry";\nregisterLoader(import.meta.url, loader);\n`,
-        );
-        return { code: injected, map: null };
+        transformed = transformed.replace(/^---\s*\n/, `---\n${injectedCode}\n`);
       } else {
-        // No frontmatter - add it
-        const injected = `---\nimport { registerLoader } from "astro-auto-load/runtime/registry";\nregisterLoader(import.meta.url, loader);\n---\n${code}`;
-        return { code: injected, map: null };
+        transformed = `---\n${injectedCode}\n---\n${transformed}`;
       }
+
+      // Replace getData() calls with getData(Astro, import.meta.url)
+      transformed = transformed.replace(
+        /getData\s*<([^>]+)>\s*\(\s*\)/g,
+        'getData<$1>(Astro, import.meta.url)',
+      );
+
+      transformed = transformed.replace(
+        /getData\s*\(\s*\)/g,
+        'getData(Astro, import.meta.url)',
+      );
+
+      return { code: transformed, map: null };
     },
   };
 }
