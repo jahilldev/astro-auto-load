@@ -4,7 +4,7 @@
  * Contains request data and utilities for data loading.
  * Users can extend this type via module augmentation if needed.
  */
-export interface LoaderContext {
+export interface Context {
   /** Route parameters from Astro (e.g., { id: "123" } for /posts/[id]) */
   params: Record<string, string>;
   /** The full URL object for the current request */
@@ -20,13 +20,14 @@ export interface LoaderContext {
  *
  * Example:
  * ```ts
- * export const loader = async (context: LoaderContext) => {
+ * export const loader = async (context) => {
+ *   // context is automatically typed by the Vite plugin
  *   const data = await fetch(`/api/posts/${context.params.id}`);
  *   return data.json();
  * };
  * ```
  */
-export type LoaderFn = (context: LoaderContext) => Promise<any>;
+export type LoaderFn = (context: Context) => Promise<any>;
 
 /**
  * Internal utility: Extracts the awaited return type of a loader function.

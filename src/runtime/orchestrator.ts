@@ -1,9 +1,9 @@
 import { getRegistry } from './registry.js';
 import { createLoaderContext } from './context.js';
-import type { LoaderContext } from './types.js';
+import type { Context } from './types.js';
 
 export interface OrchestratorResult {
-  context: LoaderContext;
+  context: Context;
   dataByModule: Map<string, unknown>;
 }
 
