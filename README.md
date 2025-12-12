@@ -150,13 +150,9 @@ interface LoaderContext {
 }
 ```
 
-### `getData<T>(astro, moduleUrl)`
+### `getData<T>()`
 
 Retrieves the loaded data for the current component.
-
-- `astro`: The Astro global object
-- `moduleUrl`: Pass `import.meta.url`
-- Returns: The data returned by your loader, or `undefined` if not found
 
 ### `autoLoadMiddleware()`
 
@@ -321,8 +317,6 @@ Server Islands work automatically because Astro runs middleware for Server Islan
 - **Server Islands:** Middleware runs (on the Server Island request) → Pre-loads loaders → Components get data via `getData()`
 
 The Vite plugin automatically registers all loaders so middleware can discover them. Whether your component renders in the initial page or as a Server Island, the data loading just works! ✨
-
-See [SERVER_ISLANDS.md](./SERVER_ISLANDS.md) for more details and nested component examples.
 
 ## License
 
