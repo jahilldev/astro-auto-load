@@ -1,6 +1,6 @@
 type AnyAsyncFn<T = any> = (...args: any[]) => Promise<T>;
 
-export function createPromiseDedupe() {
+export function promiseDedupe() {
   const cache = new Map<string, Promise<any>>();
 
   function keyFrom(fn: AnyAsyncFn, args: any[]) {

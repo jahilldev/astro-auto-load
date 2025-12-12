@@ -20,13 +20,13 @@ export interface LoaderContext {
  *
  * Example:
  * ```ts
- * export const loader = async (ctx: LoaderContext) => {
- *   const data = await fetch(`/api/posts/${ctx.params.id}`);
+ * export const loader = async (context: LoaderContext) => {
+ *   const data = await fetch(`/api/posts/${context.params.id}`);
  *   return data.json();
  * };
  * ```
  */
-export type LoaderFn = (ctx: LoaderContext) => Promise<any>;
+export type LoaderFn = (context: LoaderContext) => Promise<any>;
 
 /**
  * Internal utility: Extracts the awaited return type of a loader function.
@@ -47,7 +47,7 @@ type LoaderResult<T extends LoaderFn> = T extends (...args: any[]) => infer R
  * type Data = Loader<typeof loader>;
  * // Data is { name: string; age: number }
  *
- * const data = getData<Data>(Astro, import.meta.url);
+ * const data = getLoaderData<Data>(Astro, import.meta.url);
  * ```
  */
 export type Loader<T extends LoaderFn> = LoaderResult<T>;

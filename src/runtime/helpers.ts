@@ -11,7 +11,7 @@ import type { AstroGlobal } from 'astro';
  *
  * type Data = Loader<typeof loader>; // shorthand use, or export for use elsewhere
  *
- * export const loader = async (ctx) => {
+ * export const loader = async (context) => {
  *   return { title: 'Hello', count: 42 };
  * };
  *

@@ -10,4 +10,7 @@
  */
 
 export { getLoaderData } from './runtime/helpers';
+export { getRegistry } from './runtime/registry';
+export { promiseDedupe } from './runtime/dedupe';
+export { createLoaderContext } from './runtime/context';
 export type { LoaderContext, LoaderFn, Loader } from './runtime/types';

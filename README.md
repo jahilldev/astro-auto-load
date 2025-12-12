@@ -69,8 +69,8 @@ import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
 type Data = Loader<typeof loader>;
 
 // Define your loader - it receives route params, URL, request, etc.
-export const loader = async (ctx) => {
-  const res = await fetch(`https://api.example.com/stories/${ctx.params.id}`);
+export const loader = async (context) => {
+  const res = await fetch(`https://api.example.com/stories/${context.params.id}`);
   return res.json() as Promise<{ id: string; title: string; body: string }>;
 };
 
@@ -97,7 +97,7 @@ import Story from '@/components/Story.astro';
 <Story />
 ```
 
-The `ctx.params` will contain `{ id: "123" }` when visiting `/posts/123`.
+The `context.params` will contain `{ id: "123" }` when visiting `/posts/123`.
 
 ### Deduplication
 
@@ -105,16 +105,16 @@ If multiple components request the same data, use the built-in dedupe helper:
 
 ```astro
 ---
-import { getData, type LoaderContext } from 'astro-auto-load/runtime';
+import { getLoaderData, type LoaderContext } from 'astro-auto-load/runtime';
 
-export const loader = async (ctx: LoaderContext) => {
+export const loader = async (context: LoaderContext) => {
   // This will only execute once per request, even if used by multiple components
-  return ctx.dedupe(
+  return context.dedupe(
     async (id: string) => {
       const res = await fetch(`https://api.example.com/stories/${id}`);
       return res.json();
     },
-    ctx.params.id
+    context.params.id
   );
 };
 
@@ -129,7 +129,7 @@ const data = getLoaderData();
 3. **Runtime**: The middleware runs before rendering, collecting all registered loaders
 4. **Runtime**: All loaders execute in parallel (no waterfalls!)
 5. **Runtime**: Results are stored in `Astro.locals.autoLoad`
-6. **Runtime**: Components retrieve their data using `getData()`
+6. **Runtime**: Components retrieve their data using `getLoaderData()`
 
 ## API Reference
 
@@ -153,7 +153,7 @@ interface LoaderContext {
 }
 ```
 
-### `getData<T>()`
+### `getLoaderData<T>()`
 
 Retrieves the loaded data for the current component.
 
@@ -165,41 +165,78 @@ Creates the middleware that executes all loaders before rendering.
 
 ### Custom Context
 
-You can extend the `LoaderContext` type via module augmentation:
+You can add custom properties to the `LoaderContext` that all loaders receive. This is useful for providing database clients, auth services, or other shared utilities.
+
+**Step 1: Augment the LoaderContext type**
 
 ```ts
-// src/types/astro-auto-load.d.ts
+// src/loader.d.ts
 import 'astro-auto-load/runtime/types';
 
 declare module 'astro-auto-load/runtime/types' {
   interface LoaderContext {
-    // Add custom properties
+    // Add your custom properties
     db: DatabaseClient;
     auth: AuthService;
   }
 }
 ```
 
-Then create a custom context factory:
+**Step 2: Create custom middleware to provide the context**
+
+You need to manually compose middleware to inject your custom properties into the loader context:
 
 ```ts
-// src/lib/custom-context.ts
-import { createLoaderContext as baseCreateContext } from 'astro-auto-load/runtime/context';
-import type { LoaderContext } from 'astro-auto-load/runtime/types';
+// src/middleware.ts
+import { defineMiddleware } from 'astro:middleware';
+import { getRegistry, createLoaderContext } from 'astro-auto-load/runtime';
 
-export function createCustomLoaderContext(
-  params: Record<string, string>,
-  request: Request,
-): LoaderContext {
-  const baseContext = baseCreateContext(params, request);
+const autoLoadMiddleware = defineMiddleware(async (context, next) => {
+  const registry = getRegistry();
+  const entries = Array.from(registry.entries());
 
-  return {
-    ...baseContext,
-    db: getDbClient(),
-    auth: getAuthService(),
-  };
-}
+  // Create loader context with custom properties
+  const loaderContext = createLoaderContext({
+    params: context.params as Record<string, string>,
+    request: context.request,
+    extend: () => ({
+      db: getDbClient(),
+      auth: getAuthService(),
+    }),
+  });
+
+  // Run all loaders with custom context
+  const results = await Promise.all(
+    entries.map(async ([moduleUrl, loader]) => {
+      const value = await loader(loaderContext);
+      return [moduleUrl, value] as const;
+    }),
+  );
+
+  // Store results
+  context.locals.autoLoad = new Map(results);
+
+  return next();
+});
+
+export const onRequest = autoLoadMiddleware;
 ```
+
+**Step 3: Use in your loaders**
+
+```astro
+---
+export const loader = async (context) => {
+  // context.db and context.auth are now available and type-safe!
+  const user = await context.db.users.findOne({ id: context.params.id });
+  const isAuthed = await context.auth.checkPermission(user);
+
+  return { user, isAuthed };
+};
+---
+```
+
+**Note:** If you need custom context, you'll be writing your own middleware composition anyway, so the automatic middleware injection won't apply.
 
 ### Custom Middleware Composition
 
@@ -270,7 +307,7 @@ The recommended approach - let TypeScript infer types automatically:
 ---
 import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
 
-export const loader = async (ctx) => {
+export const loader = async (context) => {
   return {
     name: 'James',
     age: 38,
@@ -293,7 +330,7 @@ You can extract the loader's return type for reuse:
 ```ts
 import { type Loader } from 'astro-auto-load/runtime';
 
-const loader = async (ctx) => ({ count: 42 });
+const loader = async (context) => ({ count: 42 });
 
 export type Data = Loader<typeof loader>; // { count: number }
 
@@ -316,8 +353,8 @@ Server Islands work automatically because Astro runs middleware for Server Islan
 
 **How it works:**
 
-- **Regular SSR pages:** Middleware runs → Pre-loads all loaders in parallel → Components get data via `getData()`
-- **Server Islands:** Middleware runs (on the Server Island request) → Pre-loads loaders → Components get data via `getData()`
+- **Regular SSR pages:** Middleware runs → Pre-loads all loaders in parallel → Components get data via `getLoaderData()`
+- **Server Islands:** Middleware runs (on the Server Island request) → Pre-loads loaders → Components get data via `getLoaderData()`
 
 The Vite plugin automatically registers all loaders so middleware can discover them. Whether your component renders in the initial page or as a Server Island, the data loading just works! ✨
 
