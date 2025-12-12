@@ -24,13 +24,25 @@ import type { AstroGlobal } from 'astro';
  * @param moduleUrl - The module URL (optional - auto-injected by Vite plugin)
  * @returns The loader data for this component, or undefined if not found
  */
-export function getLoaderData<T = unknown>(
-  astro?: AstroGlobal,
-  moduleUrl?: string,
-): T | undefined {
+export function getLoaderData<T = unknown>(astro?: any, moduleUrl?: string): T | undefined {
   if (!astro || !moduleUrl) {
+    console.warn('[astro-auto-load] getLoaderData called without astro or moduleUrl', {
+      astro: !!astro,
+      moduleUrl,
+    });
     return undefined;
   }
 
-  return astro.locals.autoLoad?.get(moduleUrl) as T | undefined;
+  if (!astro.createAstro) {
+    return undefined;
+  }
+
+  const astroInstance = astro.createAstro({}, {}, {});
+  const locals = astroInstance?.locals;
+
+  if (!locals?.autoLoad) {
+    return undefined;
+  }
+
+  return locals.autoLoad.get(moduleUrl) as T | undefined;
 }

@@ -338,6 +338,7 @@ function processData(data: Data) {
 
 - **Only works in SSR mode** (not static builds)
 - **Loaders run on every request** - Consider adding your own caching layer for frequently accessed data
+- **Loaders cannot access props** - Loaders execute at the middleware level (before components render), so they only have access to the `LoaderContext` object (route params, URL, request).
 
 ### Server Islands
 

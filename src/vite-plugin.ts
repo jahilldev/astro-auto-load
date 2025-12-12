@@ -5,8 +5,8 @@ interface PluginOptions {
 }
 
 const injectedCode = `
-import * as __autoLoad from "astro-auto-load/runtime";
-__autoLoad.registerLoader(import.meta.url, loader);
+import { registerLoader as __autoLoadRegister } from "astro-auto-load/runtime";
+const __autoLoadModuleUrl = import.meta.url;
 `;
 
 /**
@@ -33,22 +33,32 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
 
       let transformed = code;
 
-      // Inject registration
-      const frontmatterMatch = transformed.match(/^---\s*\n/);
-      if (frontmatterMatch) {
-        transformed = transformed.replace(/^---\s*\n/, `---\n${injectedCode}`);
-      } else {
-        transformed = `---\n${injectedCode}---\n${transformed}`;
+      // Inject imports and module URL capture at the very top
+      transformed = injectedCode + transformed;
+
+      // Find where the loader is defined and inject the registration call after it
+      const loaderDefMatch = transformed.match(
+        /((?:const|let|var)\s+loader\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
+      );
+
+      if (loaderDefMatch && loaderDefMatch.index !== undefined) {
+        const position = loaderDefMatch.index + loaderDefMatch[0].length;
+
+        transformed = `
+          ${transformed.slice(0, position)}
+          __autoLoadRegister(import.meta.url, loader);
+          ${transformed.slice(position)}
+        `;
       }
 
       transformed = transformed.replace(
         /getLoaderData\s*<([^>]+)>\s*\(\s*\)/g,
-        'getLoaderData<$1>(Astro, import.meta.url)',
+        'getLoaderData<$1>($$$$result, __autoLoadModuleUrl)',
       );
 
       transformed = transformed.replace(
         /getLoaderData\s*\(\s*\)/g,
-        'getLoaderData(Astro, import.meta.url)',
+        'getLoaderData($$$$result, __autoLoadModuleUrl)',
       );
 
       return { code: transformed, map: null };
