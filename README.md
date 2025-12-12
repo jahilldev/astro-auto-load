@@ -189,14 +189,10 @@ You need to manually compose middleware to inject your custom properties into th
 ```ts
 // src/middleware.ts
 import { defineMiddleware } from 'astro:middleware';
-import { getRegistry, createLoaderContext } from 'astro-auto-load/runtime';
+import { runAllLoadersForRequest } from 'astro-auto-load/runtime';
 
 const autoLoadMiddleware = defineMiddleware(async (context, next) => {
-  const registry = getRegistry();
-  const entries = Array.from(registry.entries());
-
-  // Create loader context with custom properties
-  const loaderContext = createLoaderContext({
+  const { dataByModule } = await runAllLoadersForRequest({
     params: context.params as Record<string, string>,
     request: context.request,
     extend: () => ({
@@ -205,16 +201,8 @@ const autoLoadMiddleware = defineMiddleware(async (context, next) => {
     }),
   });
 
-  // Run all loaders with custom context
-  const results = await Promise.all(
-    entries.map(async ([moduleUrl, loader]) => {
-      const value = await loader(loaderContext);
-      return [moduleUrl, value] as const;
-    }),
-  );
-
   // Store results
-  context.locals.autoLoad = new Map(results);
+  context.locals.autoLoad = dataByModule;
 
   return next();
 });

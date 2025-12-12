@@ -35,7 +35,10 @@ export function autoLoadMiddleware(): MiddlewareHandler {
     }
     const request = context.request;
 
-    const { dataByModule } = await runAllLoadersForRequest(params, request);
+    const { dataByModule } = await runAllLoadersForRequest({
+      params,
+      request,
+    });
 
     // Store the map directly so components can look themselves up
     context.locals.autoLoad = dataByModule;

@@ -7,11 +7,18 @@ export interface OrchestratorResult {
   dataByModule: Map<string, unknown>;
 }
 
+export interface RunAllLoadersOptions {
+  params: Record<string, string>;
+  request: Request;
+  extend?: () => Record<string, any>;
+}
+
 export async function runAllLoadersForRequest(
-  params: Record<string, string>,
-  request: Request,
+  options: RunAllLoadersOptions,
 ): Promise<OrchestratorResult> {
-  const context: LoaderContext = createLoaderContext({ params, request });
+  const { params, request, extend } = options;
+
+  const context = createLoaderContext({ params, request, extend });
   const registry = getRegistry();
 
   const entries = Array.from(registry.entries());
