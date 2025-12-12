@@ -262,7 +262,7 @@ The middleware automatically skips `/_astro`, `/assets`, and `/api` paths. To cu
 ```ts
 // src/middleware.ts
 import { defineMiddleware, sequence } from 'astro:middleware';
-import { runAllLoadersForRequest } from 'astro-auto-load/runtime/orchestrator';
+import { runAllLoadersForRequest } from 'astro-auto-load/runtime';
 
 const customAutoLoad = defineMiddleware(async (context, next) => {
   // Custom skip logic
