@@ -28,19 +28,18 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
 
       const injectedCode = `
 import { registerLoader } from "astro-auto-load/runtime";
-
 // Register loader for middleware discovery
 registerLoader(import.meta.url, loader);
-`;
+      `;
 
       let transformed = code;
 
       // Inject registration
       const frontmatterMatch = transformed.match(/^---\s*\n/);
       if (frontmatterMatch) {
-        transformed = transformed.replace(/^---\s*\n/, `---\n${injectedCode}\n`);
+        transformed = transformed.replace(/^---\s*\n/, `---\n${injectedCode}`);
       } else {
-        transformed = `---\n${injectedCode}\n---\n${transformed}`;
+        transformed = `---\n${injectedCode}---\n${transformed}`;
       }
 
       transformed = transformed.replace(
