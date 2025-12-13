@@ -24,14 +24,14 @@ In typical Astro SSR apps, you face a choice:
 ```
 Component Tree: Parent → Child → Grandchild
 Each component: ~100ms data fetch
-Total time: ~300ms (sequential waterfall)
+Total fetch time: ~300ms (sequential waterfall)
 ```
 
 **After** (With astro-auto-load):
 ```
 Component Tree: Parent → Child → Grandchild
 Each component: ~100ms data fetch
-Total time: ~100ms (parallel execution)
+Total fetch time: ~100ms (parallel execution)
 ```
 
 **Result:** ~3x faster rendering, verified by [E2E tests](test/e2e.test.ts) ⚡
