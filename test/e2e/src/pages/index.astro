@@ -3,7 +3,6 @@ import Slow1 from '../components/Slow1.astro';
 import Slow2 from '../components/Slow2.astro';
 import Slow3 from '../components/Slow3.astro';
 import ConditionalComponent from '../components/ConditionalComponent.astro';
-// UnusedComponent is intentionally NOT imported to verify its loader doesn't run
 
 const pageStart = Date.now();
 const showConditional = Astro.url.searchParams.get('showConditional') === 'true';

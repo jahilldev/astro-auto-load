@@ -1,9 +1,5 @@
 import type { Plugin } from 'vite';
 
-interface PluginOptions {
-  root: string;
-}
-
 /**
  * Vite plugin that detects components with `export const loader` or `export async function loader`
  * and automatically:
@@ -13,7 +9,7 @@ interface PluginOptions {
  * This enables both regular SSR and Server Islands to work seamlessly,
  * as Astro runs middleware for both contexts.
  */
-export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
+export function astroAutoLoadVitePlugin(): Plugin {
   return {
     name: 'astro-auto-load-vite-plugin',
     enforce: 'pre',
