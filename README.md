@@ -121,7 +121,7 @@ export const loader = async (context) => {
 The integration uses lazy execution to run loaders efficiently:
 
 1. **Build-time**: The Vite plugin transforms `.astro` files to automatically inject loader registration code
-2. **Runtime**: Middleware sets up AsyncLocalStorage to track loaders during each request
+2. **Runtime**: Middleware sets up `AsyncLocalStorage` to track loaders during each request
 3. **Runtime**: Components with loaders register themselves when imported during rendering
 4. **Runtime**: The first call to `getLoaderData()` triggers parallel execution of all registered loaders
 5. **Runtime**: Results are cached in `Astro.locals.autoLoad` for the remainder of the request
@@ -129,8 +129,8 @@ The integration uses lazy execution to run loaders efficiently:
 
 **Benefits:**
 - Only executes loaders for components that are actually rendered
-- All loaders execute in parallel (no waterfalls!)
-- Type-safe data access with automatic inference
+- All loaders execute in parallel (no async waterfalls!)
+- Type-safe data access with inference via `getLoaderData<Data>();`
 
 ## API Reference
 
