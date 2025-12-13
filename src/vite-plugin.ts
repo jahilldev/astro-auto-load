@@ -4,10 +4,6 @@ interface PluginOptions {
   root: string;
 }
 
-const injectedCode = `
-const __autoLoadModuleUrl = import.meta.url;
-`;
-
 /**
  * Vite plugin that detects components with `export const loader` or `export async function loader`
  * and automatically:
@@ -22,9 +18,12 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
     name: 'astro-auto-load-vite-plugin',
     enforce: 'pre',
 
-    async transform(code, id) {
+    async load(id) {
       if (!id.endsWith('.astro')) return null;
-
+      
+      const fs = await import('fs/promises');
+      const code = await fs.readFile(id.split('?')[0], 'utf-8');
+      
       // Check for 'export const loader' or 'export async function loader' in frontmatter
       const hasLoaderExport = /export\s+(const|async\s+function)\s+loader\s*[=(]/m.test(code);
 
@@ -32,19 +31,32 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
 
       let transformed = code;
 
-      // Inject imports and module URL capture at the very top
-      transformed = injectedCode + transformed;
+      // Find and extract the frontmatter
+      const frontmatterMatch = transformed.match(/^---\n([\s\S]*?)\n---/);
+      if (frontmatterMatch) {
+        const originalFrontmatter = frontmatterMatch[1];
+        const injectedImports = `import { registerLoader as __autoLoadRegister } from "astro-auto-load/runtime";\n`;
+        
+        // Merge: injected imports + original frontmatter
+        const mergedFrontmatter = `---\n${injectedImports}${originalFrontmatter}\n---`;
+        
+        // Replace the original frontmatter with merged version
+        transformed = transformed.replace(/^---\n[\s\S]*?\n---/, mergedFrontmatter);
+      }
 
-      // Auto-inject await for getLoaderData calls and pass the loader function
-      // This allows users to write sync-looking code that's actually async
+      // Inject loader registration immediately after loader definition
+      // Use import.meta.url directly, not as a variable
+      // Match the entire loader definition including function body
       transformed = transformed.replace(
-        /(const|let|var)\s+(\w+)\s*=\s*getLoaderData\s*<([^>]+)>\s*\(\s*\)/g,
-        '$1 $2 = await getLoaderData<$3>($$$$result, __autoLoadModuleUrl, loader)',
+        /(export\s+const\s+loader\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
+        '$1\n__autoLoadRegister(import.meta.url, loader);'
       );
 
+      // Transform getLoaderData() calls to inject Astro and moduleUrl parameters
+      // Use import.meta.url directly in the call
       transformed = transformed.replace(
-        /(const|let|var)\s+(\w+)\s*=\s*getLoaderData\s*\(\s*\)/g,
-        '$1 $2 = await getLoaderData($$$$result, __autoLoadModuleUrl, loader)',
+        /(await\s+)?getLoaderData<([^>]+)>\(\)/g,
+        '$1getLoaderData<$2>(Astro, import.meta.url)'
       );
 
       return { code: transformed, map: null };

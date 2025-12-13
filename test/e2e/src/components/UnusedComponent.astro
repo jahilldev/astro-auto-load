@@ -3,7 +3,7 @@ import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
 
 type Data = Loader<typeof loader>;
 
-export const loader = async (context) => {
+export const loader = async () => {
   const start = Date.now();
   console.log('[UnusedComponent] SHOULD NOT SEE THIS - Loader executing!');
   await new Promise((resolve) => setTimeout(resolve, 100));
@@ -11,7 +11,7 @@ export const loader = async (context) => {
   return { component: 'UnusedComponent', start, duration };
 };
 
-const data = getLoaderData<Data>();
+const data = await getLoaderData<Data>();
 ---
 
 <div data-component="unused" data-start={data?.start} data-duration={data?.duration}>

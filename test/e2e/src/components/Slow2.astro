@@ -10,7 +10,7 @@ export const loader = async (context) => {
   return { component: 'Slow2', start, duration };
 };
 
-const data = getLoaderData<Data>();
+const data: Data | undefined = await getLoaderData<Data>();
 ---
 
 <div data-component="slow2" data-start={data?.start} data-duration={data?.duration}>
