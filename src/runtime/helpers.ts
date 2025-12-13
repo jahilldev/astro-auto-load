@@ -76,7 +76,7 @@ export function getLoaderData<TLoader extends (context: any) => Promise<any>>(
       '[astro-auto-load] Middleware not configured. ' +
       'Ensure autoLoadMiddleware is running. If you have a custom src/middleware.ts, ' +
       'you must manually include autoLoadMiddleware in your sequence. ' +
-      'See: https://github.com/your-repo/astro-auto-load#custom-middleware-composition'
+      'See: https://github.com/jahilldev/astro-auto-load#custom-middleware-composition'
     );
   }
 
