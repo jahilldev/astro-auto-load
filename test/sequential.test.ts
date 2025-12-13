@@ -49,9 +49,6 @@ describe('Sequential await behavior', () => {
 
       // If sequential: would take ~225ms (100+50+75)
       // If parallel: should take ~100ms (longest loader)
-      console.log('Total time:', totalTime);
-      console.log('Start time diffs:', startTimes.map((t, i) => i === 0 ? 0 : t - startTimes[0]));
-
       // This test will FAIL if loaders execute sequentially
       expect(totalTime).toBeLessThan(150); // Should be ~100ms, not ~225ms
       expect(totalTime).toBeGreaterThan(90);

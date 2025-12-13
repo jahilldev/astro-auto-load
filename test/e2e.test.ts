@@ -239,9 +239,6 @@ describe('E2E', () => {
       // Instead, they should start ~100ms apart (sequential waterfall)
       expect(diff_3_to_2).toBeGreaterThan(80); // Sequential, not parallel
       expect(diff_2_to_1).toBeGreaterThan(80); // Sequential, not parallel
-
-      console.log(`Waterfall timing: Child3→Child2: ${diff_3_to_2}ms, Child2→Child1: ${diff_2_to_1}ms`);
-      console.log(`Total sequential time: ~${duration1 + duration2 + duration3}ms (waterfall)`);
     }, 15000);
   });
 });
