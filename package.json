@@ -30,6 +30,10 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "vitest run test/e2e.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -46,7 +50,12 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
     "astro": "^5.0.0",
+    "eslint": "^9.39.2",
+    "prettier": "^3.7.4",
+    "prettier-plugin-astro": "^0.14.1",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
   }

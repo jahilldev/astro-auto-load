@@ -1,8 +1,6 @@
 import type { AstroIntegration } from 'astro';
 import { astroAutoLoadVitePlugin } from './vite-plugin.js';
 
-export type AutoLoadOptions = {};
-
 /**
  * Astro integration for automatic component-level data loading.
  *
@@ -24,11 +22,11 @@ export type AutoLoadOptions = {};
  *
  * That's it! No manual middleware setup required.
  */
-export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegration {
+export default function autoLoad(): AstroIntegration {
   return {
     name: 'astro-auto-load',
     hooks: {
-      'astro:config:setup': ({ updateConfig, config, addMiddleware }) => {
+      'astro:config:setup': ({ updateConfig, addMiddleware }) => {
         updateConfig({
           vite: {
             plugins: [astroAutoLoadVitePlugin()],

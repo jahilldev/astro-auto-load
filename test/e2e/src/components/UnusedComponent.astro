@@ -1,7 +1,5 @@
 ---
-import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
-
-type Data = Loader<typeof loader>;
+import { getLoaderData } from 'astro-auto-load/runtime';
 
 export const loader = async () => {
   const start = Date.now();
