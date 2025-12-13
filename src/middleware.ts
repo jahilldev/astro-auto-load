@@ -1,11 +1,25 @@
 import type { MiddlewareHandler } from 'astro';
-import { runAllLoadersForRequest } from './runtime/orchestrator.js';
+import { initializeRequestRegistry } from './runtime/registry.js';
+import { createLazyLoaderExecutor } from './runtime/orchestrator.js';
 
 /**
- * Middleware that runs all registered loaders before rendering the page.
+ * Middleware that executes loaders for the current request in parallel.
  *
- * This executes all loader functions in parallel, then stores the results
- * in context.locals.autoLoad for components to access.
+ * Strategy:
+ * 1. Initialize a request-scoped registry (via AsyncLocalStorage)
+ * 2. Components register their loaders as they're imported during rendering
+ * 3. All registered loaders execute in parallel
+ * 4. Middleware waits for all loaders to complete before rendering starts
+ * 5. Components can then synchronously access their data (no await needed!)
+ *
+ * This is fully automatic - only components in the current route tree execute!
+ *
+ * Benefits:
+ * - Only loaders for rendered components execute (no waste!)
+ * - All needed loaders execute in parallel (no waterfalls)
+ * - Synchronous data access in components (great DX!)
+ * - Zero configuration needed
+ * - Each loader runs exactly once per request
  *
  * This middleware is automatically injected by the integration.
  * You don't need to manually add it to src/middleware.ts.
@@ -33,14 +47,26 @@ export const autoLoadMiddleware: MiddlewareHandler = async (context, next) => {
   }
   const request = context.request;
 
-  const { dataByModule } = await runAllLoadersForRequest({
-    params,
-    request,
+  // Initialize request-scoped registry and execute within that context
+  return initializeRequestRegistry(async () => {
+    // Create lazy executor - components will register as they're imported
+    const executor = createLazyLoaderExecutor({
+      params,
+      request,
+    });
+
+    context.locals.autoLoad = executor;
+
+    // Execute all loaders that get registered during this request
+    // Components register as they're imported, then we execute them all in parallel
+    executor.executeAll();
+
+    // Wait for all loaders to complete before rendering starts
+    // This allows components to synchronously access their data
+    await executor.awaitAll();
+
+    return next();
   });
-
-  context.locals.autoLoad = dataByModule;
-
-  return next();
 };
 
 export const onRequest = autoLoadMiddleware;
