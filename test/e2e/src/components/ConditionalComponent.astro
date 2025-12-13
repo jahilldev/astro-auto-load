@@ -11,6 +11,6 @@ export const loader = async () => {
 const data = await getLoaderData<typeof loader>();
 ---
 
-<div data-component="conditional" data-start={data?.start} data-duration={data?.duration}>
-  ConditionalComponent: {data?.duration}ms
+<div data-component="conditional" data-start={data.start} data-duration={data.duration}>
+  ConditionalComponent: {data.duration}ms
 </div>

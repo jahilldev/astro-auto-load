@@ -44,23 +44,43 @@ export function defineLoader<T>(
  * // Type inference works automatically ✨
  * const data = await getLoaderData<typeof loader>();
  * ---
- * <h1>{data?.title}</h1>
+ * <h1>{data.title}</h1>
  * ```
  * 
  * @param astro - The Astro global object (auto-injected by Vite plugin)
  * @param moduleUrl - The module URL (auto-injected by Vite plugin)
+ * @throws {Error} If autoLoadMiddleware is not configured or Vite plugin transformation failed
  */
 export function getLoaderData<TLoader extends (context: any) => Promise<any>>(
   astro?: any,
   moduleUrl?: string
-): Promise<Awaited<ReturnType<TLoader>> | undefined> {
-  const locals = astro?.locals;
+): Promise<Awaited<ReturnType<TLoader>>> {
+  if (!astro) {
+    throw new Error(
+      '[astro-auto-load] getLoaderData() called without Astro context. ' +
+      'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.'
+    );
+  }
 
-  if (!locals?.autoLoad || !moduleUrl) {
-    return Promise.resolve(undefined);
+  if (!moduleUrl) {
+    throw new Error(
+      '[astro-auto-load] Module URL not found. ' +
+      'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.'
+    );
+  }
+
+  const locals = astro.locals;
+
+  if (!locals?.autoLoad) {
+    throw new Error(
+      '[astro-auto-load] Middleware not configured. ' +
+      'Ensure autoLoadMiddleware is running. If you have a custom src/middleware.ts, ' +
+      'you must manually include autoLoadMiddleware in your sequence. ' +
+      'See: https://github.com/your-repo/astro-auto-load#custom-middleware-composition'
+    );
   }
 
   const executor = locals.autoLoad as LazyLoaderExecutor;
 
-  return executor.getData(moduleUrl) as Promise<Awaited<ReturnType<TLoader>> | undefined>;
+  return executor.getData(moduleUrl) as Promise<Awaited<ReturnType<TLoader>>>;
 }

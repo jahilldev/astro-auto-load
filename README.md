@@ -89,10 +89,6 @@ export const loader = async (context) => {
 
 // Type inference works automatically! ✨
 const data = await getLoaderData<typeof loader>();
-
-if (!data) {
-  return null;
-}
 ---
 
 <article>
@@ -120,8 +116,8 @@ const data = await getLoaderData<typeof loader>();
 ---
 
 <article>
-  <h2>{data?.title}</h2>
-  <p>{data?.body}</p>
+  <h2>{data.title}</h2>
+  <p>{data.body}</p>
 </article>
 ```
 
@@ -173,7 +169,7 @@ The integration uses lazy execution to run loaders efficiently:
 **Benefits:**
 - Only executes loaders for components that are actually rendered
 - All loaders execute in parallel (no async waterfalls!)
-- Type-safe data access with inference via `getLoaderData<Data>();`
+- Type-safe data access with inference via `getLoaderData<typeof loader>();`
 
 ## API Reference
 
@@ -283,7 +279,7 @@ export const loader = async (context) => {
 };
 
 const data = await getLoaderData<typeof loader>();
-// data is { name: string; age: number; hobbies: string[] } | undefined
+// data is { name: string; age: number; hobbies: string[] }
 ---
 ```
 
@@ -291,24 +287,42 @@ const data = await getLoaderData<typeof loader>();
 
 If you need the type elsewhere, extract it using the `Loader` helper:
 
-```ts
-import { type Loader } from 'astro-auto-load/runtime';
+```astro
+// src/components/ParentComponent.astro
+---
+import { type Loader, getLoaderData } from 'astro-auto-load/runtime';
+import { ChildComponent } from './ChildComponent.astro';
 
-export const loader = async (context) => ({ count: 42 });
+export const loader = async () => ({ count: 42 });
 
 export type Data = Loader<typeof loader>; // { count: number }
 
-// Use the type elsewhere
-function processData(data: Data) {
-  console.log(data.count);
+const data = await getLoaderData<Data>();
+---
+
+<ChildComponent data={data} />
+```
+
+```astro
+// src/components/ChildComponent.astro
+---
+import type { Data } from './ParentComponent.astro'
+
+type Props {
+  data: Data;
 }
+
+const { data } = Astro.props;
+---
+
+<div>{data.count}</div>
 ```
 
 ## Limitations
 
 - **Only works in SSR mode** (not static builds)
 - **Loaders run on-demand** - Results are cached per request, but there's no persistent caching across requests
-- **Loaders cannot access component props** - Loaders receive the `Context` object (route params, URL, request) but not component props
+- **Loaders cannot access component props** - Loaders receive the `context` object (route params, URL, request) but not props
 
 ### Server Islands
 
@@ -322,6 +336,51 @@ Server Islands work automatically because each Server Island request creates its
 - **Server Islands:** Same process runs independently for each Server Island request
 
 The lazy execution model ensures that only the loaders needed for the rendered components execute, whether in the initial page or in a Server Island. ✨
+
+## Troubleshooting
+
+### Error: "Middleware not configured"
+
+**Full error:**
+```
+[astro-auto-load] Middleware not configured. Ensure autoLoadMiddleware is running.
+```
+
+**Cause:** You have a custom `src/middleware.ts` file, and `autoLoadMiddleware` is not included.
+
+**Solution:** Manually add `autoLoadMiddleware` to your middleware chain:
+
+```ts
+// src/middleware.ts
+import { sequence } from 'astro:middleware';
+import { autoLoadMiddleware } from 'astro-auto-load/middleware';
+
+export const onRequest = sequence(
+  // your other middleware...
+  autoLoadMiddleware
+);
+```
+
+### Error: "Module URL not found"
+
+**Full error:**
+```
+[astro-auto-load] Module URL not found. This should be auto-injected by the Vite plugin.
+```
+
+**Cause:** The Vite plugin transformation failed or the integration wasn't added to `astro.config.mjs`.
+
+**Solution:** Ensure the integration is properly installed:
+
+```js
+// astro.config.mjs
+import autoLoad from 'astro-auto-load';
+
+export default defineConfig({
+  output: 'server', // required
+  integrations: [autoLoad()],
+});
+```
 
 ## License
 
