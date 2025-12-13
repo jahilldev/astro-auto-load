@@ -1,0 +1,16 @@
+---
+import WaterfallChild3 from '../components/WaterfallChild3.astro';
+
+const pageStart = Date.now();
+---
+
+<html>
+<head>
+  <title>Waterfall Test</title>
+</head>
+<body>
+  <h1>Traditional Async Components (Waterfall)</h1>
+  <div id="page-start" data-time={pageStart}></div>
+  <WaterfallChild3 />
+</body>
+</html>

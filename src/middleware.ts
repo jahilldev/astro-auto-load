@@ -1,11 +1,24 @@
 import type { MiddlewareHandler } from 'astro';
-import { runAllLoadersForRequest } from './runtime/orchestrator.js';
+import { initializeRequestRegistry } from './runtime/registry.js';
+import { createLoaderExecutor } from './runtime/orchestrator.js';
 
 /**
- * Middleware that runs all registered loaders before rendering the page.
+ * Middleware that enables request-scoped loader execution.
  *
- * This executes all loader functions in parallel, then stores the results
- * in context.locals.autoLoad for components to access.
+ * Strategy:
+ * 1. Initialize a request-scoped registry (via AsyncLocalStorage)
+ * 2. Components register their loaders as they're imported during rendering
+ * 3. First getLoaderData() call executes ALL registered loaders in parallel
+ * 4. Subsequent calls retrieve cached results
+ *
+ * This is fully automatic - only loaders for rendered components execute!
+ *
+ * Benefits:
+ * - Only loaders for rendered components execute (no waste!)
+ * - All needed loaders execute in parallel on first access (no waterfalls)
+ * - Simple async data access with `await getLoaderData()` (great DX)
+ * - Zero configuration needed
+ * - Each loader runs exactly once per request
  *
  * This middleware is automatically injected by the integration.
  * You don't need to manually add it to src/middleware.ts.
@@ -33,14 +46,20 @@ export const autoLoadMiddleware: MiddlewareHandler = async (context, next) => {
   }
   const request = context.request;
 
-  const { dataByModule } = await runAllLoadersForRequest({
-    params,
-    request,
+  // Initialize request-scoped registry and execute within that context
+  return initializeRequestRegistry(async () => {
+    // Create lazy executor - components will register as they're imported
+    const executor = createLoaderExecutor({
+      params,
+      request,
+    });
+
+    context.locals.autoLoad = executor;
+
+    // Components register and request their data during rendering
+    // All getData() calls are batched and executed in parallel automatically
+    return next();
   });
-
-  context.locals.autoLoad = dataByModule;
-
-  return next();
 };
 
 export const onRequest = autoLoadMiddleware;

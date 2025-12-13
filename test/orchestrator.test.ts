@@ -1,152 +1,215 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { runAllLoadersForRequest } from '../src/runtime/orchestrator.js';
-import { registerLoader, getRegistry } from '../src/runtime/registry.js';
+import { describe, it, expect, vi } from 'vitest';
+import { createLoaderExecutor } from '../src/runtime/orchestrator.js';
+import { registerLoader, initializeRequestRegistry } from '../src/runtime/registry.js';
 
 describe('Orchestrator', () => {
-  beforeEach(() => {
-    // Clear registry before each test
-    getRegistry().clear();
-  });
+  it('should only execute loaders that are registered for this request', async () => {
+    await initializeRequestRegistry(async () => {
+      const loader1 = vi.fn(async () => ({ data: 'loader1' }));
+      const loader2 = vi.fn(async () => ({ data: 'loader2' }));
+      const loader3 = vi.fn(async () => ({ data: 'loader3' }));
 
-  it('should run loaders in parallel', async () => {
-    const executionOrder: number[] = [];
-    const startTimes: number[] = [];
+      registerLoader('module1', loader1);
+      registerLoader('module2', loader2);
+      registerLoader('module3', loader3);
 
-    // Create loaders with different delays
-    const loader1 = vi.fn(async () => {
-      startTimes.push(Date.now());
-      executionOrder.push(1);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      return { data: 'loader1' };
-    });
+      const executor = createLoaderExecutor({
+        params: {},
+        request: new Request('http://localhost/test'),
+      });
 
-    const loader2 = vi.fn(async () => {
-      startTimes.push(Date.now());
-      executionOrder.push(2);
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      return { data: 'loader2' };
-    });
+      // Request loader1 and loader3 in parallel (before any await)
+    const promise1 = executor.getData('module1');
+    const promise3 = executor.getData('module3');
+    
+    const [data1, data3] = await Promise.all([promise1, promise3]);
 
-    const loader3 = vi.fn(async () => {
-      startTimes.push(Date.now());
-      executionOrder.push(3);
-      await new Promise((resolve) => setTimeout(resolve, 75));
-      return { data: 'loader3' };
-    });
-
-    // Register loaders
-    registerLoader('module1', loader1);
-    registerLoader('module2', loader2);
-    registerLoader('module3', loader3);
-
-    const startTime = Date.now();
-    const result = await runAllLoadersForRequest({
-      params: {},
-      request: new Request('http://localhost/test'),
-    });
-    const totalTime = Date.now() - startTime;
-
-    // All loaders should have been called
+    // All registered loaders execute (module1, module2, module3)
+    // This ensures deeply nested components don't get missed
     expect(loader1).toHaveBeenCalledTimes(1);
-    expect(loader2).toHaveBeenCalledTimes(1);
+    expect(loader2).toHaveBeenCalledTimes(1); // Executed even though not requested
     expect(loader3).toHaveBeenCalledTimes(1);
 
-    // All loaders should start at roughly the same time (within 10ms)
-    const timeDiff1 = Math.abs(startTimes[1] - startTimes[0]);
-    const timeDiff2 = Math.abs(startTimes[2] - startTimes[0]);
-    expect(timeDiff1).toBeLessThan(10);
-    expect(timeDiff2).toBeLessThan(10);
+    expect(data1).toEqual({ data: 'loader1' });
+    expect(data3).toEqual({ data: 'loader3' });
+    });
+  });
 
-    // Total time should be ~100ms (longest loader), not ~225ms (sequential)
-    expect(totalTime).toBeLessThan(150); // Some margin for execution
-    expect(totalTime).toBeGreaterThan(90);
+  it('should execute all requested loaders in parallel', async () => {
+    await initializeRequestRegistry(async () => {
+      const executionOrder: number[] = [];
+      const startTimes: number[] = [];
 
-    // Data should be returned correctly
-    expect(result.dataByModule.size).toBe(3);
-    expect(result.dataByModule.get('module1')).toEqual({ data: 'loader1' });
-    expect(result.dataByModule.get('module2')).toEqual({ data: 'loader2' });
-    expect(result.dataByModule.get('module3')).toEqual({ data: 'loader3' });
+      const loader1 = vi.fn(async () => {
+        startTimes.push(Date.now());
+        executionOrder.push(1);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return { data: 'loader1' };
+      });
+
+      const loader2 = vi.fn(async () => {
+        startTimes.push(Date.now());
+        executionOrder.push(2);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return { data: 'loader2' };
+      });
+
+      const loader3 = vi.fn(async () => {
+        startTimes.push(Date.now());
+        executionOrder.push(3);
+        await new Promise((resolve) => setTimeout(resolve, 75));
+        return { data: 'loader3' };
+      });
+
+      registerLoader('module1', loader1);
+      registerLoader('module2', loader2);
+      registerLoader('module3', loader3);
+
+      const executor = createLoaderExecutor({
+        params: {},
+        request: new Request('http://localhost/test'),
+      });
+
+      const startTime = Date.now();
+
+      // Request all three in quick succession (simulating nested components)
+      const promise1 = executor.getData('module1');
+      const promise2 = executor.getData('module2');
+      const promise3 = executor.getData('module3');
+
+      await Promise.all([promise1, promise2, promise3]);
+
+      const totalTime = Date.now() - startTime;
+
+      // All loaders should start at roughly the same time (within 10ms)
+      const timeDiff1 = Math.abs(startTimes[1] - startTimes[0]);
+      const timeDiff2 = Math.abs(startTimes[2] - startTimes[0]);
+      expect(timeDiff1).toBeLessThan(10);
+      expect(timeDiff2).toBeLessThan(10);
+
+      // Total time should be ~100ms (longest loader), not ~225ms (sequential)
+      expect(totalTime).toBeLessThan(150);
+      expect(totalTime).toBeGreaterThan(90);
+    });
+  });
+
+  it('should cache results and not re-execute loaders', async () => {
+    await initializeRequestRegistry(async () => {
+      const loader = vi.fn(async () => ({ data: 'test', random: Math.random() }));
+
+      registerLoader('module1', loader);
+
+      const executor = createLoaderExecutor({
+        params: {},
+        request: new Request('http://localhost/test'),
+      });
+
+      // Request the same loader multiple times
+      const data1 = await executor.getData('module1');
+      const data2 = await executor.getData('module1');
+      const data3 = await executor.getData('module1');
+
+      // Loader should only be called once
+      expect(loader).toHaveBeenCalledTimes(1);
+
+      // All results should be identical (same object reference)
+      expect(data1).toBe(data2);
+      expect(data2).toBe(data3);
+    });
   });
 
   it('should pass context to loaders', async () => {
-    const loader = vi.fn(async (context) => {
-      return {
-        params: context.params,
-        url: context.url.pathname,
-      };
-    });
+    await initializeRequestRegistry(async () => {
+      const loader = vi.fn(async (context) => {
+        return {
+          params: context.params,
+          url: context.url.pathname,
+        };
+      });
 
-    registerLoader('module1', loader);
+      registerLoader('module1', loader);
 
-    const result = await runAllLoadersForRequest({
-      params: { id: '123', slug: 'test' },
-      request: new Request('http://localhost/posts/123'),
-    });
-
-    expect(loader).toHaveBeenCalledWith(
-      expect.objectContaining({
+      const executor = createLoaderExecutor({
         params: { id: '123', slug: 'test' },
-        url: expect.any(URL),
-        request: expect.any(Request),
-        dedupe: expect.any(Function),
-      }),
-    );
+        request: new Request('http://localhost/posts/123'),
+      });
 
-    const data = result.dataByModule.get('module1') as any;
-    expect(data.params).toEqual({ id: '123', slug: 'test' });
-    expect(data.url).toBe('/posts/123');
+      const data = await executor.getData('module1');
+
+      expect(loader).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: { id: '123', slug: 'test' },
+          url: expect.any(URL),
+          request: expect.any(Request),
+          dedupe: expect.any(Function),
+        }),
+      );
+
+      expect(data).toEqual({
+        params: { id: '123', slug: 'test' },
+        url: '/posts/123',
+      });
+    });
   });
 
   it('should handle loader errors gracefully', async () => {
-    const workingLoader = vi.fn(async () => ({ data: 'success' }));
-    const failingLoader = vi.fn(async () => {
-      throw new Error('Loader failed');
-    });
+    await initializeRequestRegistry(async () => {
+      const workingLoader = vi.fn(async () => ({ data: 'success' }));
+      const failingLoader = vi.fn(async () => {
+        throw new Error('Loader failed');
+      });
 
-    registerLoader('working', workingLoader);
-    registerLoader('failing', failingLoader);
+      registerLoader('working', workingLoader);
+      registerLoader('failing', failingLoader);
 
-    await expect(
-      runAllLoadersForRequest({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
-      }),
-    ).rejects.toThrow();
+      });
 
-    expect(workingLoader).toHaveBeenCalled();
-    expect(failingLoader).toHaveBeenCalled();
+      // Request both in parallel (before await) - simulates real component rendering
+      const workingPromise = executor.getData('working');
+      const failingPromise = executor.getData('failing');
+
+      // Working loader should succeed
+      const workingData = await workingPromise;
+      expect(workingData).toEqual({ data: 'success' });
+
+      // Failing loader should throw
+      await expect(failingPromise).rejects.toThrow('Loader failed');
+
+      expect(workingLoader).toHaveBeenCalled();
+      expect(failingLoader).toHaveBeenCalled();
+    });
   });
 
   it('should support custom context properties via extend', async () => {
-    const loader = vi.fn(async (context: any) => {
-      return {
-        customProp: context.customProp,
-        db: context.db?.name,
-      };
-    });
+    await initializeRequestRegistry(async () => {
+      const loader = vi.fn(async (context: any) => {
+        return {
+          customProp: context.customProp,
+          db: context.db?.name,
+        };
+      });
 
-    registerLoader('module1', loader);
+      registerLoader('module1', loader);
 
-    const result = await runAllLoadersForRequest({
-      params: {},
-      request: new Request('http://localhost/test'),
-      extend: () => ({
+      const executor = createLoaderExecutor({
+        params: {},
+        request: new Request('http://localhost/test'),
+        extend: () => ({
+          customProp: 'custom-value',
+          db: { name: 'test-db' },
+        }),
+      });
+
+      const data = await executor.getData('module1');
+
+      expect(data).toEqual({
         customProp: 'custom-value',
-        db: { name: 'test-db' },
-      }),
+        db: 'test-db',
+      });
     });
-
-    const data = result.dataByModule.get('module1') as any;
-    expect(data.customProp).toBe('custom-value');
-    expect(data.db).toBe('test-db');
-  });
-
-  it('should return empty map when no loaders registered', async () => {
-    const result = await runAllLoadersForRequest({
-      params: {},
-      request: new Request('http://localhost/test'),
-    });
-
-    expect(result.dataByModule.size).toBe(0);
   });
 });
+

@@ -1,8 +1,6 @@
 import type { AstroIntegration } from 'astro';
 import { astroAutoLoadVitePlugin } from './vite-plugin.js';
 
-export type AutoLoadOptions = {};
-
 /**
  * Astro integration for automatic component-level data loading.
  *
@@ -10,32 +8,28 @@ export type AutoLoadOptions = {};
  * 1. Detects components with `export const loader` functions
  * 2. Automatically registers them for parallel execution
  * 3. Injects middleware to run loaders before page render
- * 4. Provides data to components via Astro.locals
+ * 4. Provides data to components via `await getLoaderData()`
  *
  * Usage in astro.config.mjs:
  * ```js
  * import autoLoad from 'astro-auto-load';
  *
  * export default defineConfig({
- *   output: 'server', // or 'hybrid'
+ *   output: 'server',
  *   integrations: [autoLoad()],
  * });
  * ```
  *
  * That's it! No manual middleware setup required.
  */
-export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegration {
+export default function autoLoad(): AstroIntegration {
   return {
     name: 'astro-auto-load',
     hooks: {
-      'astro:config:setup': ({ updateConfig, config, addMiddleware }) => {
+      'astro:config:setup': ({ updateConfig, addMiddleware }) => {
         updateConfig({
           vite: {
-            plugins: [
-              astroAutoLoadVitePlugin({
-                root: config.root?.pathname ?? process.cwd(),
-              }),
-            ],
+            plugins: [astroAutoLoadVitePlugin()],
           },
         });
 
@@ -49,5 +43,3 @@ export default function autoLoad(options: AutoLoadOptions = {}): AstroIntegratio
 }
 
 export { autoLoadMiddleware } from './middleware.js';
-export { getLoaderData } from './runtime/helpers.js';
-export type { Context, Loader } from './runtime/types.js';

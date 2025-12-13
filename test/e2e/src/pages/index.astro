@@ -1,0 +1,24 @@
+---
+import Slow1 from '../components/Slow1.astro';
+import Slow2 from '../components/Slow2.astro';
+import Slow3 from '../components/Slow3.astro';
+import ConditionalComponent from '../components/ConditionalComponent.astro';
+
+const pageStart = Date.now();
+const showConditional = Astro.url.searchParams.get('showConditional') === 'true';
+---
+
+<html>
+  <head>
+    <title>E2E Parallel Test</title>
+  </head>
+  <body>
+    <h1>Parallel Loader Test</h1>
+    <div data-render-start={pageStart}>
+      <Slow1 />
+      <Slow2 />
+      <Slow3 />
+      {showConditional && <ConditionalComponent />}
+    </div>
+  </body>
+</html>

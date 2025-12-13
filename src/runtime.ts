@@ -4,14 +4,17 @@
  * Import from 'astro-auto-load/runtime' in your components:
  * ```astro
  * ---
- * import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+ * import { getLoaderData, defineLoader } from 'astro-auto-load/runtime';
  * ---
  * ```
  */
 
-export { getLoaderData } from './runtime/helpers.js';
+// User-facing API - use these in your components
+export { getLoaderData, defineLoader } from './runtime/helpers.js';
+export type { Context, Loader } from './runtime/types.js';
+
+// Internal APIs - exported for testing and advanced use cases
 export { getRegistry, registerLoader } from './runtime/registry.js';
 export { promiseDedupe } from './runtime/dedupe.js';
 export { createLoaderContext } from './runtime/context.js';
-export { runAllLoadersForRequest } from './runtime/orchestrator.js';
-export type { Context, Loader } from './runtime/types.js';
+export { createLoaderExecutor } from './runtime/orchestrator.js';

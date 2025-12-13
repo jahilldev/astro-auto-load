@@ -1,17 +1,21 @@
 import 'astro';
+import type { LazyLoaderExecutor } from './runtime/orchestrator.js';
 
 declare global {
   namespace App {
     interface Locals {
       /**
-       * Map of module URLs to their loader results.
+       * Lazy loader executor for component data loading.
        *
-       * Components can access their data using:
+       * Loaders execute in parallel on the first call to `getLoaderData()`.
+       * Results are cached for the remainder of the request.
+       *
        * ```ts
-       * const data = Astro.locals.autoLoad?.get(import.meta.url);
+       * import { getLoaderData } from 'astro-auto-load/runtime';
+       * const data = await getLoaderData<typeof loader>();
        * ```
        */
-      autoLoad?: Map<string, unknown>;
+      autoLoad?: LazyLoaderExecutor;
     }
   }
 }
