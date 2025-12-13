@@ -80,18 +80,17 @@ Define a loader in your component:
 ```astro
 ---
 // src/components/Post.astro
-import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
-
-type Data = Loader<typeof loader>;
+import { getLoaderData } from 'astro-auto-load/runtime';
 
 export const loader = async (context) => {
   const res = await fetch(`https://api.example.com/posts/${context.params.id}`);
   return res.json();
 };
 
-const data = await getLoaderData<Data>();
+// Type inference works automatically! ✨
+const data = await getLoaderData<typeof loader>();
 
-if(!data) {
+if (!data) {
   return null;
 }
 ---
@@ -99,6 +98,30 @@ if(!data) {
 <article>
   <h2>{data.title}</h2>
   <p>{data.body}</p>
+</article>
+```
+
+### Alternative: Using `defineLoader` for Context Types
+
+If you prefer explicit context typing, use `defineLoader`:
+
+```astro
+---
+// src/components/Post.astro
+import { defineLoader, getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = defineLoader(async (context) => {
+  // context is automatically typed as Context ✨
+  const res = await fetch(`https://api.example.com/posts/${context.params.id}`);
+  return res.json();
+});
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<article>
+  <h2>{data?.title}</h2>
+  <p>{data?.body}</p>
 </article>
 ```
 
@@ -241,21 +264,15 @@ export const onRequest = conditionalAutoLoad;
 
 ## TypeScript
 
-The package includes full TypeScript support with automatic type inference from your loaders.
+The package includes full TypeScript support with automatic type inference.
 
-### Infer Types from Loaders
+### Automatic Type Inference (Recommended)
 
-The recommended approach - let TypeScript infer types automatically:
+Simply pass `typeof loader` to `getLoaderData`:
 
 ```astro
 ---
-import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
-
-export const loader = async (context) => {
-  return {
-```astro
----
-import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+import { getLoaderData } from 'astro-auto-load/runtime';
 
 export const loader = async (context) => {
   return {
@@ -265,22 +282,19 @@ export const loader = async (context) => {
   };
 };
 
-// Type is automatically inferred from the loader! ✨
-const data = await getLoaderData<Loader<typeof loader>>();
-// data?.name is string
-// data?.age is number
-// data?.hobbies is string[]
+const data = await getLoaderData<typeof loader>();
+// data is { name: string; age: number; hobbies: string[] } | undefined
 ---
 ```
 
-### Extracting Types
+### Extracting Types for Reuse
 
-You can extract the loader's return type for reuse:
+If you need the type elsewhere, extract it using the `Loader` helper:
 
 ```ts
 import { type Loader } from 'astro-auto-load/runtime';
 
-const loader = async (context) => ({ count: 42 });
+export const loader = async (context) => ({ count: 42 });
 
 export type Data = Loader<typeof loader>; // { count: number }
 

@@ -11,7 +11,7 @@ export const loader = async () => {
   return { component: 'UnusedComponent', start, duration };
 };
 
-const data = await getLoaderData<Data>();
+const data = await getLoaderData<typeof loader>();
 ---
 
 <div data-component="unused" data-start={data?.start} data-duration={data?.duration}>
