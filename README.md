@@ -313,8 +313,8 @@ const data = await getLoaderData<typeof loader>();
 If you need the type elsewhere, extract it using the `Loader` helper:
 
 ```astro
-// src/components/ParentComponent.astro
 ---
+// src/components/ParentComponent.astro
 import { type Loader, getLoaderData } from 'astro-auto-load/runtime';
 import { ChildComponent } from './ChildComponent.astro';
 
@@ -329,8 +329,8 @@ const data = await getLoaderData<Data>();
 ```
 
 ```astro
-// src/components/ChildComponent.astro
 ---
+// src/components/ChildComponent.astro
 import type { Data } from './ParentComponent.astro'
 
 type Props {
