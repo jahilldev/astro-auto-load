@@ -28,6 +28,7 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -w",
     "test": "vitest run",
+    "test:e2e": "vitest run test/e2e.test.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

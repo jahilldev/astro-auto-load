@@ -1,0 +1,18 @@
+---
+import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+
+type Data = Loader<typeof loader>;
+
+export const loader = async (context) => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const duration = Date.now() - start;
+  return { component: 'Slow2', start, duration };
+};
+
+const data = getLoaderData<Data>();
+---
+
+<div data-component="slow2" data-start={data?.start} data-duration={data?.duration}>
+  Slow2: {data?.duration}ms
+</div>

@@ -3,20 +3,19 @@ import { initializeRequestRegistry } from './runtime/registry.js';
 import { createLazyLoaderExecutor } from './runtime/orchestrator.js';
 
 /**
- * Middleware that executes loaders for the current request in parallel.
+ * Middleware that enables request-scoped loader execution.
  *
  * Strategy:
  * 1. Initialize a request-scoped registry (via AsyncLocalStorage)
  * 2. Components register their loaders as they're imported during rendering
- * 3. All registered loaders execute in parallel
- * 4. Middleware waits for all loaders to complete before rendering starts
- * 5. Components can then synchronously access their data (no await needed!)
+ * 3. First getLoaderData() call executes ALL registered loaders in parallel
+ * 4. Subsequent calls retrieve from cache
  *
- * This is fully automatic - only components in the current route tree execute!
+ * This is fully automatic - only loaders for rendered components execute!
  *
  * Benefits:
  * - Only loaders for rendered components execute (no waste!)
- * - All needed loaders execute in parallel (no waterfalls)
+ * - All needed loaders execute in parallel on first access (no waterfalls)
  * - Synchronous data access in components (great DX!)
  * - Zero configuration needed
  * - Each loader runs exactly once per request
@@ -57,14 +56,8 @@ export const autoLoadMiddleware: MiddlewareHandler = async (context, next) => {
 
     context.locals.autoLoad = executor;
 
-    // Execute all loaders that get registered during this request
-    // Components register as they're imported, then we execute them all in parallel
-    executor.executeAll();
-
-    // Wait for all loaders to complete before rendering starts
-    // This allows components to synchronously access their data
-    await executor.awaitAll();
-
+    // Components register and request their data during rendering
+    // All getData() calls are batched and executed in parallel automatically
     return next();
   });
 };

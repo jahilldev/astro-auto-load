@@ -1,0 +1,5 @@
+{
+  "name": "astro-auto-load-e2e-test",
+  "private": true,
+  "type": "module"
+}

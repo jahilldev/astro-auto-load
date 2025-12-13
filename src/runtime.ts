@@ -13,5 +13,5 @@ export { getLoaderData } from './runtime/helpers.js';
 export { getRegistry, registerLoader } from './runtime/registry.js';
 export { promiseDedupe } from './runtime/dedupe.js';
 export { createLoaderContext } from './runtime/context.js';
-export { runAllLoadersForRequest } from './runtime/orchestrator.js';
+export { createLazyLoaderExecutor } from './runtime/orchestrator.js';
 export type { Context, Loader } from './runtime/types.js';

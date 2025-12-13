@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
-  runAllLoadersForRequest,
   createLazyLoaderExecutor,
   LazyLoaderExecutor,
 } from '../src/runtime/orchestrator.js';
 import { registerLoader, getRegistry, initializeRequestRegistry } from '../src/runtime/registry.js';
 
 describe('Orchestrator', () => {
-  it('should only execute loaders that are requested', async () => {
+  it('should only execute loaders that are registered for this request', async () => {
     await initializeRequestRegistry(async () => {
       const loader1 = vi.fn(async () => ({ data: 'loader1' }));
       const loader2 = vi.fn(async () => ({ data: 'loader2' }));
@@ -28,9 +27,10 @@ describe('Orchestrator', () => {
     
     const [data1, data3] = await Promise.all([promise1, promise3]);
 
-    // Only loader1 and loader3 should be called (batched together)
+    // All registered loaders execute (module1, module2, module3)
+    // This ensures deeply nested components don't get missed
     expect(loader1).toHaveBeenCalledTimes(1);
-    expect(loader2).not.toHaveBeenCalled(); // Not requested!
+    expect(loader2).toHaveBeenCalledTimes(1); // Executed even though not requested
     expect(loader3).toHaveBeenCalledTimes(1);
 
     expect(data1).toEqual({ data: 'loader1' });

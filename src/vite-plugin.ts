@@ -5,7 +5,6 @@ interface PluginOptions {
 }
 
 const injectedCode = `
-import { registerLoader as __autoLoadRegister } from "astro-auto-load/runtime";
 const __autoLoadModuleUrl = import.meta.url;
 `;
 
@@ -36,29 +35,16 @@ export function astroAutoLoadVitePlugin(options: PluginOptions): Plugin {
       // Inject imports and module URL capture at the very top
       transformed = injectedCode + transformed;
 
-      // Find where the loader is defined and inject the registration call after it
-      const loaderMatch = transformed.match(
-        /((?:const|let|var)\s+loader\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
-      );
-
-      if (loaderMatch && loaderMatch.index !== undefined) {
-        const position = loaderMatch.index + loaderMatch[0].length;
-
-        transformed = `
-          ${transformed.slice(0, position)}
-          __autoLoadRegister(import.meta.url, loader);
-          ${transformed.slice(position)}
-        `;
-      }
-
+      // Auto-inject await for getLoaderData calls and pass the loader function
+      // This allows users to write sync-looking code that's actually async
       transformed = transformed.replace(
-        /getLoaderData\s*<([^>]+)>\s*\(\s*\)/g,
-        'getLoaderData<$1>($$$$result, __autoLoadModuleUrl)',
+        /(const|let|var)\s+(\w+)\s*=\s*getLoaderData\s*<([^>]+)>\s*\(\s*\)/g,
+        '$1 $2 = await getLoaderData<$3>($$$$result, __autoLoadModuleUrl, loader)',
       );
 
       transformed = transformed.replace(
-        /getLoaderData\s*\(\s*\)/g,
-        'getLoaderData($$$$result, __autoLoadModuleUrl)',
+        /(const|let|var)\s+(\w+)\s*=\s*getLoaderData\s*\(\s*\)/g,
+        '$1 $2 = await getLoaderData($$$$result, __autoLoadModuleUrl, loader)',
       );
 
       return { code: transformed, map: null };
