@@ -6,9 +6,8 @@ Automatic component-level data loading for Astro SSR. Co-locate your data fetchi
 
 In typical Astro SSR apps, you face a choice:
 
-1. **Fetch data in the page** - Causes waterfalls when components need different data
-2. **Props drilling** - Pass data from page to deeply nested components (verbose and brittle)
-3. **Fetch in components** - Simple API, but can't `await` in component scripts, leading to duplicate fetches
+1. **Props drilling** - Pass data from page to deeply nested components (verbose and brittle, and couples component trees). Not fun for complex apps.
+2. **Fetch in components** - Nice DX, but Astro resolves promises sequentially (async waterfall), hurting render times and TTFB.
 
 ## The Solution
 
@@ -18,6 +17,24 @@ In typical Astro SSR apps, you face a choice:
 ✅ **Runs them in parallel** (no waterfalls)  
 ✅ **Deduplicates promises** via utility function  
 ✅ **Provides type-safe data** to your components
+
+### Performance Impact
+
+**Before** (Traditional Async Components):
+```
+Component Tree: Parent → Child → Grandchild
+Each component: ~100ms data fetch
+Total time: ~300ms (sequential waterfall)
+```
+
+**After** (With astro-auto-load):
+```
+Component Tree: Parent → Child → Grandchild
+Each component: ~100ms data fetch
+Total time: ~100ms (parallel execution)
+```
+
+**Result:** ~3x faster rendering, verified by [E2E tests](test/e2e.test.ts) ⚡
 
 ## Installation
 
@@ -36,7 +53,7 @@ import { defineConfig } from 'astro/config';
 import autoLoad from 'astro-auto-load';
 
 export default defineConfig({
-  output: 'server', // or 'hybrid' - required for SSR
+  output: 'server', // required
   integrations: [autoLoad()],
 });
 ```
@@ -62,40 +79,43 @@ Define a loader in your component:
 
 ```astro
 ---
-// src/components/Story.astro
+// src/components/Post.astro
 import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
 
 type Data = Loader<typeof loader>;
 
 export const loader = async (context) => {
-  const res = await fetch(`https://api.example.com/stories/${context.params.id}`);
+  const res = await fetch(`https://api.example.com/posts/${context.params.id}`);
   return res.json();
 };
 
-// Type inference works automatically! ✨
 const data = await getLoaderData<Data>();
+
+if(!data) {
+  return null;
+}
 ---
 
-{data && (
-  <article>
-    <h2>{data.title}</h2>
-    <p>{data.body}</p>
-  </article>
-)}
+<article>
+  <h2>{data.title}</h2>
+  <p>{data.body}</p>
+</article>
 ```
 
 ### Using Route Parameters
 
+Loaders automatically receive route parameters through the `context` object:
+
 ```astro
 ---
 // src/pages/posts/[id].astro
-import Story from '@/components/Story.astro';
+import Post from '../../components/Post.astro';
 ---
 
-<Story />
+<Post />
 ```
 
-The `context.params` will contain `{ id: "123" }` when visiting `/posts/123`.
+When you visit `/posts/123`, the `Post` component's loader receives `context.params.id === "123"` automatically.
 
 ### Deduplication
 
