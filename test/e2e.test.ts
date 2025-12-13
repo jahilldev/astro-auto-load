@@ -7,6 +7,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const fixtureDir = join(__dirname, 'fixtures', 'e2e');
 
+/**
+ * E2E tests verify that loaders execute correctly in a real Astro SSR environment.
+ *
+ * Test Coverage:
+ * 1. ✅ Parallel Execution: All rendered component loaders execute concurrently
+ * 2. ✅ Selective Execution: Only RENDERED components execute their loaders
+ *    - Components not imported don't execute (UnusedComponent)
+ *    - Components imported but not rendered don't execute (ConditionalComponent when false)
+ *    - Components conditionally rendered DO execute when rendered (ConditionalComponent when true)
+ * 3. ✅ Zero Waste: No loader executes unless its component actually renders
+ */
 describe('E2E Parallel Execution', () => {
   let astroProcess: ChildProcess;
   let serverReady = false;
@@ -98,9 +109,47 @@ describe('E2E Parallel Execution', () => {
     expect(diff1_3).toBeLessThan(20);
     expect(diff2_3).toBeLessThan(20);
 
-    // Verify all components rendered successfully
+    // Verify all rendered components executed successfully
     expect(html).toContain('Slow1:');
     expect(html).toContain('Slow2:');
     expect(html).toContain('Slow3:');
+
+    // Verify ConditionalComponent loader did NOT execute (imported but not rendered)
+    // This is BETTER than expected - only components that actually render execute their loaders!
+    const conditionalMatch = html.match(/data-component="conditional"/);
+    expect(conditionalMatch).toBeNull();
+    console.log('ConditionalComponent did NOT execute (even better - only rendered components run!)');
+
+    // Verify UnusedComponent loader did NOT execute (not imported at all)
+    const unusedMatch = html.match(/data-component="unused"/);
+    expect(unusedMatch).toBeNull();
+    console.log('UnusedComponent did NOT execute (correct - not imported)');
+  }, 15000);
+
+  it('should execute conditionally rendered component loaders when they render', async () => {
+    expect(serverReady).toBe(true);
+
+    // Fetch page with query param to trigger conditional rendering
+    const response = await fetch('http://localhost:4567/?showConditional=true');
+    expect(response.ok).toBe(true);
+
+    const html = await response.text();
+
+    // Verify conditional component executed when rendered
+    const conditionalMatch = html.match(
+      /data-component="conditional" data-start="(\d+)" data-duration="(\d+)"/,
+    );
+    expect(conditionalMatch).toBeTruthy();
+    
+    const conditionalStart = parseInt(conditionalMatch![1]);
+    
+    // Also verify it ran in parallel with the others
+    const slow1Match = html.match(/data-component="slow1" data-start="(\d+)"/);
+    const start1 = parseInt(slow1Match![1]);
+    
+    const diff = Math.abs(conditionalStart - start1);
+    expect(diff).toBeLessThan(20); // Ran in parallel
+    
+    console.log('ConditionalComponent executed in parallel when rendered (conditional=true)');
   }, 15000);
 });

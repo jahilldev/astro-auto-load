@@ -1,0 +1,19 @@
+---
+import { getLoaderData, type Loader } from 'astro-auto-load/runtime';
+
+type Data = Loader<typeof loader>;
+
+export const loader = async (context) => {
+  const start = Date.now();
+  console.log('[ConditionalComponent] Loader executing (imported but conditionally rendered)');
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const duration = Date.now() - start;
+  return { component: 'ConditionalComponent', start, duration };
+};
+
+const data = getLoaderData<Data>();
+---
+
+<div data-component="conditional" data-start={data?.start} data-duration={data?.duration}>
+  ConditionalComponent: {data?.duration}ms
+</div>
