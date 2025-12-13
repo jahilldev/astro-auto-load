@@ -1,9 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { 
-  createLazyLoaderExecutor,
-  LazyLoaderExecutor,
-} from '../src/runtime/orchestrator.js';
-import { registerLoader, getRegistry, initializeRequestRegistry } from '../src/runtime/registry.js';
+import { describe, it, expect, vi } from 'vitest';
+import { createLoaderExecutor } from '../src/runtime/orchestrator.js';
+import { registerLoader, initializeRequestRegistry } from '../src/runtime/registry.js';
 
 describe('Orchestrator', () => {
   it('should only execute loaders that are registered for this request', async () => {
@@ -16,7 +13,7 @@ describe('Orchestrator', () => {
       registerLoader('module2', loader2);
       registerLoader('module3', loader3);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
       });
@@ -68,7 +65,7 @@ describe('Orchestrator', () => {
       registerLoader('module2', loader2);
       registerLoader('module3', loader3);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
       });
@@ -102,7 +99,7 @@ describe('Orchestrator', () => {
 
       registerLoader('module1', loader);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
       });
@@ -132,7 +129,7 @@ describe('Orchestrator', () => {
 
       registerLoader('module1', loader);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: { id: '123', slug: 'test' },
         request: new Request('http://localhost/posts/123'),
       });
@@ -165,7 +162,7 @@ describe('Orchestrator', () => {
       registerLoader('working', workingLoader);
       registerLoader('failing', failingLoader);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
       });
@@ -197,7 +194,7 @@ describe('Orchestrator', () => {
 
       registerLoader('module1', loader);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
         extend: () => ({

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createLazyLoaderExecutor } from '../src/runtime/orchestrator.js';
+import { createLoaderExecutor } from '../src/runtime/orchestrator.js';
 import { registerLoader, initializeRequestRegistry } from '../src/runtime/registry.js';
 
 describe('Sequential await behavior', () => {
@@ -29,7 +29,7 @@ describe('Sequential await behavior', () => {
       registerLoader('module2', loader2);
       registerLoader('module3', loader3);
 
-      const executor = createLazyLoaderExecutor({
+      const executor = createLoaderExecutor({
         params: {},
         request: new Request('http://localhost/test'),
       });

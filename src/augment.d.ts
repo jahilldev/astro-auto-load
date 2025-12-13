@@ -5,13 +5,14 @@ declare global {
   namespace App {
     interface Locals {
       /**
-       * Lazy loader executor containing pre-loaded data.
+       * Lazy loader executor for component data loading.
        *
-       * All loaders execute in parallel during middleware before rendering starts.
-       * Components access their data synchronously using getLoaderData():
+       * Loaders execute in parallel on the first call to `getLoaderData()`.
+       * Results are cached for the remainder of the request.
+       *
        * ```ts
        * import { getLoaderData } from 'astro-auto-load/runtime';
-       * const data = getLoaderData<MyDataType>(); // No await!
+       * const data = await getLoaderData<typeof loader>();
        * ```
        */
       autoLoad?: LazyLoaderExecutor;

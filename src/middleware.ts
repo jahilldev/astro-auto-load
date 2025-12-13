@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'astro';
 import { initializeRequestRegistry } from './runtime/registry.js';
-import { createLazyLoaderExecutor } from './runtime/orchestrator.js';
+import { createLoaderExecutor } from './runtime/orchestrator.js';
 
 /**
  * Middleware that enables request-scoped loader execution.
@@ -9,14 +9,14 @@ import { createLazyLoaderExecutor } from './runtime/orchestrator.js';
  * 1. Initialize a request-scoped registry (via AsyncLocalStorage)
  * 2. Components register their loaders as they're imported during rendering
  * 3. First getLoaderData() call executes ALL registered loaders in parallel
- * 4. Subsequent calls retrieve from cache
+ * 4. Subsequent calls retrieve cached results
  *
  * This is fully automatic - only loaders for rendered components execute!
  *
  * Benefits:
  * - Only loaders for rendered components execute (no waste!)
  * - All needed loaders execute in parallel on first access (no waterfalls)
- * - Synchronous data access in components (great DX!)
+ * - Simple async data access with `await getLoaderData()` (great DX)
  * - Zero configuration needed
  * - Each loader runs exactly once per request
  *
@@ -49,7 +49,7 @@ export const autoLoadMiddleware: MiddlewareHandler = async (context, next) => {
   // Initialize request-scoped registry and execute within that context
   return initializeRequestRegistry(async () => {
     // Create lazy executor - components will register as they're imported
-    const executor = createLazyLoaderExecutor({
+    const executor = createLoaderExecutor({
       params,
       request,
     });

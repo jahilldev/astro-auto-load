@@ -29,6 +29,7 @@ export function astroAutoLoadVitePlugin(): Plugin {
 
       // Find and extract the frontmatter
       const frontmatterMatch = transformed.match(/^---\n([\s\S]*?)\n---/);
+
       if (frontmatterMatch) {
         const originalFrontmatter = frontmatterMatch[1];
         const injectedImports = `import { registerLoader as __autoLoadRegister } from "astro-auto-load/runtime";\n`;

@@ -62,8 +62,9 @@ export class LazyLoaderExecutor {
 
   /**
    * Execute all registered loaders in parallel.
-   * Executes ALL loaders in the registry, not just requested ones.
-   * This ensures nested components that registered after first getData() call still execute.
+   * Executes ALL loaders in the registry (not just the one that triggered getData).
+   * This ensures all components that rendered and registered their loaders execute together.
+   * The setImmediate ensures all synchronous registration completes before execution starts.
    */
   private async executeBatch(): Promise<void> {
     // Execute ALL registered loaders
@@ -91,7 +92,7 @@ export class LazyLoaderExecutor {
  * Create a lazy loader executor for a request.
  * This doesn't execute any loaders until they're requested via getData().
  */
-export function createLazyLoaderExecutor(
+export function createLoaderExecutor(
   options: RunAllLoadersOptions,
 ): LazyLoaderExecutor {
   const { params, request, extend } = options;
