@@ -21,6 +21,7 @@ In typical Astro SSR apps, you face a choice:
 ### Performance Impact
 
 **Before** (Traditional Async Components):
+
 ```
 Component Tree: Parent → Child → Grandchild
 Each component: ~100ms data fetch
@@ -28,6 +29,7 @@ Total fetch time: ~300ms (sequential waterfall)
 ```
 
 **After** (With astro-auto-load):
+
 ```
 Component Tree: Parent → Child → Grandchild
 Each component: ~100ms data fetch
@@ -87,6 +89,27 @@ export const loader = async (context) => {
   return res.json();
 };
 
+const data = await getLoaderData();
+---
+
+<article>
+  <h2>{data.title}</h2>
+  <p>{data.body}</p>
+</article>
+```
+
+Or with TypeScript:
+
+```astro
+---
+// src/components/Post.astro
+import { type Context, getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = async (context: Context) => {
+  const res = await fetch(`https://api.example.com/posts/${context.params.id}`);
+  return res.json();
+};
+
 // Type inference works automatically! ✨
 const data = await getLoaderData<typeof loader>();
 ---
@@ -112,6 +135,7 @@ export const loader = defineLoader(async (context) => {
   return res.json();
 });
 
+// Type inference works automatically! ✨
 const data = await getLoaderData<typeof loader>();
 ---
 
@@ -167,6 +191,7 @@ The integration uses lazy execution to run loaders efficiently:
 6. **Runtime**: Components retrieve their data using `await getLoaderData()`
 
 **Benefits:**
+
 - Only executes loaders for components that are actually rendered
 - All loaders execute in parallel (no async waterfalls!)
 - Type-safe data access with inference via `getLoaderData<typeof loader>();`
@@ -250,7 +275,7 @@ const conditionalAutoLoad = defineMiddleware(async (context, next) => {
   if (context.url.pathname.startsWith('/admin')) {
     return next();
   }
-  
+
   // Otherwise, run autoLoadMiddleware
   return autoLoadMiddleware(context, next);
 });
@@ -342,6 +367,7 @@ The lazy execution model ensures that only the loaders needed for the rendered c
 ### Error: "Middleware not configured"
 
 **Full error:**
+
 ```
 [astro-auto-load] Middleware not configured. Ensure autoLoadMiddleware is running.
 ```
@@ -357,13 +383,14 @@ import { autoLoadMiddleware } from 'astro-auto-load/middleware';
 
 export const onRequest = sequence(
   // your other middleware...
-  autoLoadMiddleware
+  autoLoadMiddleware,
 );
 ```
 
 ### Error: "Module URL not found"
 
 **Full error:**
+
 ```
 [astro-auto-load] Module URL not found. This should be auto-injected by the Vite plugin.
 ```
