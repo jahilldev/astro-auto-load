@@ -122,7 +122,7 @@ const data = await getLoaderData<typeof loader>();
 
 ### Alternative: Using `defineLoader` for Context Types
 
-If you prefer explicit context typing, use `defineLoader`:
+If you prefer implicit context typing, use `defineLoader`:
 
 ```astro
 ---
