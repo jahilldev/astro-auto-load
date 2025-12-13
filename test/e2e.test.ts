@@ -82,10 +82,6 @@ describe('E2E Parallel Execution', () => {
 
     const html = await response.text();
     
-    console.log('HTML Response:');
-    console.log(html);
-    
-    // Extract start times from rendered HTML
     const slow1Match = html.match(/data-component="slow1" data-start="(\d+)"/);
     const slow2Match = html.match(/data-component="slow2" data-start="(\d+)"/);
     const slow3Match = html.match(/data-component="slow3" data-start="(\d+)"/);
@@ -98,32 +94,25 @@ describe('E2E Parallel Execution', () => {
     const start2 = parseInt(slow2Match![1]);
     const start3 = parseInt(slow3Match![1]);
 
-    // All loaders should start within 20ms of each other (parallel)
     const diff1_2 = Math.abs(start2 - start1);
     const diff1_3 = Math.abs(start3 - start1);
     const diff2_3 = Math.abs(start3 - start2);
-
-    console.log('Start time differences:', { diff1_2, diff1_3, diff2_3 });
 
     expect(diff1_2).toBeLessThan(20);
     expect(diff1_3).toBeLessThan(20);
     expect(diff2_3).toBeLessThan(20);
 
-    // Verify all rendered components executed successfully
     expect(html).toContain('Slow1:');
     expect(html).toContain('Slow2:');
     expect(html).toContain('Slow3:');
 
-    // Verify ConditionalComponent loader did NOT execute (imported but not rendered)
-    // This is BETTER than expected - only components that actually render execute their loaders!
+    // Verify conditional loader did NOT execute (imported but not rendered)
     const conditionalMatch = html.match(/data-component="conditional"/);
     expect(conditionalMatch).toBeNull();
-    console.log('ConditionalComponent did NOT execute (even better - only rendered components run!)');
 
-    // Verify UnusedComponent loader did NOT execute (not imported at all)
+    // Verify conditional loader did NOT execute (not imported at all)
     const unusedMatch = html.match(/data-component="unused"/);
     expect(unusedMatch).toBeNull();
-    console.log('UnusedComponent did NOT execute (correct - not imported)');
   }, 15000);
 
   it('should execute conditionally rendered component loaders when they render', async () => {
@@ -149,7 +138,5 @@ describe('E2E Parallel Execution', () => {
     
     const diff = Math.abs(conditionalStart - start1);
     expect(diff).toBeLessThan(20); // Ran in parallel
-    
-    console.log('ConditionalComponent executed in parallel when rendered (conditional=true)');
   }, 15000);
 });
