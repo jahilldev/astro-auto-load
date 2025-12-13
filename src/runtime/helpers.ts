@@ -1,6 +1,8 @@
 import type { Context } from './types.js';
 import type { LazyLoaderExecutor } from './orchestrator.js';
 
+const exceptionMessage = 'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.';
+
 /**
  * Define a loader function with automatic context typing.
  *
@@ -57,15 +59,13 @@ export function getLoaderData<TLoader extends (context: any) => Promise<any>>(
 ): Promise<Awaited<ReturnType<TLoader>>> {
   if (!astro) {
     throw new Error(
-      '[astro-auto-load] getLoaderData() called without Astro context. ' +
-      'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.'
+      '[astro-auto-load] getLoaderData() called without Astro context. ' + exceptionMessage
     );
   }
 
   if (!moduleUrl) {
     throw new Error(
-      '[astro-auto-load] Module URL not found. ' +
-      'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.'
+      '[astro-auto-load] Module URL not found. ' + exceptionMessage
     );
   }
 
