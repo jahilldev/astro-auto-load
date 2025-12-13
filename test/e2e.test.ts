@@ -5,7 +5,7 @@ import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const fixtureDir = join(__dirname, 'fixtures', 'e2e');
+const fixtureDir = join(__dirname, 'e2e');
 
 /**
  * E2E tests verify that loaders execute correctly in a real Astro SSR environment.

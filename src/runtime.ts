@@ -9,9 +9,12 @@
  * ```
  */
 
+// User-facing API - use these in your components
 export { getLoaderData } from './runtime/helpers.js';
+export type { Context, Loader } from './runtime/types.js';
+
+// Internal APIs - exported for testing and advanced use cases
 export { getRegistry, registerLoader } from './runtime/registry.js';
 export { promiseDedupe } from './runtime/dedupe.js';
 export { createLoaderContext } from './runtime/context.js';
 export { createLazyLoaderExecutor } from './runtime/orchestrator.js';
-export type { Context, Loader } from './runtime/types.js';
