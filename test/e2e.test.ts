@@ -338,6 +338,148 @@ describe('E2E', () => {
       expect(html).toContain('Slot Child 2');
       expect(html).toContain('Slot Grandchild');
     }, 15000);
+
+    it('should demonstrate performance improvement over standard async slot composition', async () => {
+      expect(serverReady).toBe(true);
+
+      // Test 1: Standard async slot composition (waterfall)
+      const standardStart = Date.now();
+      const standardResponse = await fetch('http://localhost:4567/standard-slot-nested');
+      const standardResponseTime = Date.now() - standardStart;
+      expect(standardResponse.ok).toBe(true);
+
+      const standardHtml = await standardResponse.text();
+
+      // Extract timing data from standard components
+      const standardWrapper = standardHtml.match(
+        /class="standard-slot-wrapper" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const standardParent = standardHtml.match(
+        /class="standard-slot-parent" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const standardChild1 = standardHtml.match(
+        /class="standard-slot-child-1" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const standardChild2 = standardHtml.match(
+        /class="standard-slot-child-2" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const standardGrandchild = standardHtml.match(
+        /class="standard-slot-grandchild" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+
+      expect(standardWrapper).toBeTruthy();
+      expect(standardParent).toBeTruthy();
+      expect(standardChild1).toBeTruthy();
+      expect(standardChild2).toBeTruthy();
+      expect(standardGrandchild).toBeTruthy();
+
+      const standardWrapperStart = parseInt(standardWrapper![1]);
+      const standardParentStart = parseInt(standardParent![1]);
+      const standardChild1Start = parseInt(standardChild1![1]);
+      const standardChild2Start = parseInt(standardChild2![1]);
+      const standardGrandchildStart = parseInt(standardGrandchild![1]);
+
+      // Verify waterfall pattern (each component waits for previous)
+      const standardDiff_wrapper_parent = standardParentStart - standardWrapperStart;
+      const standardDiff_parent_child1 = standardChild1Start - standardParentStart;
+      const standardDiff_child1_child2 = standardChild2Start - standardChild1Start;
+      const standardDiff_child2_grandchild = standardGrandchildStart - standardChild2Start;
+
+      // Standard async should execute sequentially (~50ms apart each)
+      expect(standardDiff_wrapper_parent).toBeGreaterThan(40);
+      expect(standardDiff_parent_child1).toBeGreaterThan(40);
+      expect(standardDiff_child1_child2).toBeGreaterThan(40);
+      expect(standardDiff_child2_grandchild).toBeGreaterThan(40);
+
+      // Total execution time should be ~200ms+ (4 × 50ms delays)
+      const standardTotalTime = standardGrandchildStart - standardWrapperStart;
+      expect(standardTotalTime).toBeGreaterThan(180);
+
+      // Test 2: Optimized loader-based slot composition (parallel)
+      const loaderStart = Date.now();
+      const loaderResponse = await fetch('http://localhost:4567/slot-nested');
+      const loaderResponseTime = Date.now() - loaderStart;
+      expect(loaderResponse.ok).toBe(true);
+
+      const loaderHtml = await loaderResponse.text();
+
+      // Extract timing data from loader-based components
+      const loaderWrapper = loaderHtml.match(
+        /class="slot-wrapper" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const loaderParent = loaderHtml.match(
+        /class="slot-parent" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const loaderChild1 = loaderHtml.match(/class="slot-child-1" data-start="(\d+)" data-duration="(\d+)"/);
+      const loaderChild2 = loaderHtml.match(/class="slot-child-2" data-start="(\d+)" data-duration="(\d+)"/);
+      const loaderGrandchild = loaderHtml.match(
+        /class="slot-grandchild" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+
+      expect(loaderWrapper).toBeTruthy();
+      expect(loaderParent).toBeTruthy();
+      expect(loaderChild1).toBeTruthy();
+      expect(loaderChild2).toBeTruthy();
+      expect(loaderGrandchild).toBeTruthy();
+
+      const loaderWrapperStart = parseInt(loaderWrapper![1]);
+      const loaderParentStart = parseInt(loaderParent![1]);
+      const loaderChild1Start = parseInt(loaderChild1![1]);
+      const loaderChild2Start = parseInt(loaderChild2![1]);
+      const loaderGrandchildStart = parseInt(loaderGrandchild![1]);
+
+      // Verify parallel execution (all start at nearly the same time)
+      const loaderDiff_wrapper_parent = Math.abs(loaderParentStart - loaderWrapperStart);
+      const loaderDiff_wrapper_child1 = Math.abs(loaderChild1Start - loaderWrapperStart);
+      const loaderDiff_wrapper_child2 = Math.abs(loaderChild2Start - loaderWrapperStart);
+      const loaderDiff_wrapper_grandchild = Math.abs(loaderGrandchildStart - loaderWrapperStart);
+
+      // All loaders should start within 5ms of each other
+      expect(loaderDiff_wrapper_parent).toBeLessThan(5);
+      expect(loaderDiff_wrapper_child1).toBeLessThan(5);
+      expect(loaderDiff_wrapper_child2).toBeLessThan(5);
+      expect(loaderDiff_wrapper_grandchild).toBeLessThan(5);
+
+      // Total time should be ~50ms (parallel) vs ~200ms+ (waterfall)
+      const loaderTotalTime =
+        Math.max(
+          loaderWrapperStart,
+          loaderParentStart,
+          loaderChild1Start,
+          loaderChild2Start,
+          loaderGrandchildStart,
+        ) -
+        Math.min(
+          loaderWrapperStart,
+          loaderParentStart,
+          loaderChild1Start,
+          loaderChild2Start,
+          loaderGrandchildStart,
+        );
+
+      // Loader execution should be MUCH faster than waterfall
+      expect(loaderTotalTime).toBeLessThan(10); // All parallel, should be ~0ms
+      expect(loaderTotalTime).toBeLessThan(standardTotalTime * 0.1); // At least 90% faster
+
+      // Calculate performance improvement
+      const improvementPercent = ((standardTotalTime - loaderTotalTime) / standardTotalTime) * 100;
+      expect(improvementPercent).toBeGreaterThan(90); // Should be >90% faster
+
+      console.log('\n🌲 Slot-Based Composition Performance Comparison');
+      console.log('═══════════════════════════════════════════════════════════════');
+      console.log('\n🔴 Standard Async (Waterfall):');
+      console.log(`   Wrapper → Parent:     ${standardDiff_wrapper_parent}ms`);
+      console.log(`   Parent → Child1:      ${standardDiff_parent_child1}ms`);
+      console.log(`   Child1 → Child2:      ${standardDiff_child1_child2}ms`);
+      console.log(`   Child2 → Grandchild:  ${standardDiff_child2_grandchild}ms`);
+      console.log(`   Total execution time: ${standardTotalTime}ms`);
+      console.log('\n🟢 Recursive Loader Extraction (Parallel):');
+      console.log(`   All components start: ${loaderTotalTime}ms apart (simultaneous!)`);
+      console.log(`   Total execution time: ${loaderTotalTime}ms`);
+      console.log(`\n✨ Performance Improvement: ${improvementPercent.toFixed(1)}% FASTER!`);
+      console.log(`   (${standardTotalTime}ms → ${loaderTotalTime}ms)`);
+      console.log('═══════════════════════════════════════════════════════════════\n');
+    }, 15000);
   });
 
   describe('Traditional Async Component Waterfall', () => {

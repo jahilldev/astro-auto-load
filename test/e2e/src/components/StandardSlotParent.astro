@@ -1,0 +1,12 @@
+---
+// Traditional async component - NO loader, uses direct await
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 50));
+const duration = Date.now() - start;
+const data = { component: 'StandardSlotParent', start, duration };
+---
+
+<div class="standard-slot-parent" data-start={data.start} data-duration={data.duration}>
+  <h3>Standard Slot Parent (took {data.duration}ms)</h3>
+  <slot />
+</div>

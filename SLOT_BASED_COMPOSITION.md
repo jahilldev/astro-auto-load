@@ -9,6 +9,7 @@ The astro-auto-load plugin now supports **recursive loader extraction for slot-b
 In Astro, components can be composed in two ways:
 
 ### 1. Direct Import Pattern (Already Supported)
+
 ```astro
 ---
 import Child from './Child.astro';
@@ -19,6 +20,7 @@ import Child from './Child.astro';
 ```
 
 ### 2. Slot-Based Pattern (NOW SUPPORTED!)
+
 ```astro
 ---
 import Parent from './Parent.astro';
@@ -32,6 +34,7 @@ import Child from './Child.astro';
 ## The Challenge
 
 With slot-based composition:
+
 - **Parent components don't import their children** (children are passed via `<slot />`)
 - **Pages import all components** but pages typically don't have loaders
 - **Traditional approach would miss children** since plugin only processes components with loaders
@@ -49,6 +52,7 @@ We implemented a **wrapper component pattern** with recursive tree extraction:
 ## Example
 
 ### Component Structure
+
 ```astro
 <!-- SlotWrapper.astro -->
 ---
@@ -83,6 +87,7 @@ Each nested component (SlotParent, SlotChild1, etc.) has its own loader with a 5
 ### Performance Results
 
 **Without Optimization (Sequential Waterfall):**
+
 - SlotWrapper: 50ms
 - SlotParent: 50ms (waits for wrapper)
 - SlotChild1: 50ms (waits for parent)
@@ -91,6 +96,7 @@ Each nested component (SlotParent, SlotChild1, etc.) has its own loader with a 5
 - **Total: ~250ms**
 
 **With Recursive Extraction (All Parallel):**
+
 - All 5 components start: **1765719401763ms** (exact same time!)
 - Time difference: **0ms between all components**
 - **Total: ~51ms** (one parallel batch)
@@ -100,6 +106,7 @@ Each nested component (SlotParent, SlotChild1, etc.) has its own loader with a 5
 ## Implementation Details
 
 ### 1. Recursive Tree Discovery
+
 ```typescript
 async function discoverComponentTree(filePath: string): Promise<ComponentInfo[]> {
   // Recursively finds ALL .astro components in the tree
@@ -108,10 +115,12 @@ async function discoverComponentTree(filePath: string): Promise<ComponentInfo[]>
 ```
 
 ### 2. Loader Extraction
+
 When processing a component with loaders:
+
 ```typescript
 const allComponentsInTree = await discoverComponentTree(filePath);
-const componentsWithLoaders = allComponentsInTree.filter(c => c.hasLoader);
+const componentsWithLoaders = allComponentsInTree.filter((c) => c.hasLoader);
 
 // Extract loader code from ALL components in tree
 for (const component of componentsWithLoaders) {
@@ -122,34 +131,37 @@ for (const component of componentsWithLoaders) {
 ```
 
 ### 3. Child Component Transformation
+
 When a child component's loader has been extracted:
+
 ```typescript
 if (wasExtracted) {
   // Skip registerLoader() call (already registered by parent)
   frontmatter = frontmatter.replace(
     /registerLoader\(import\.meta\.url, loader\)/,
-    '// registerLoader skipped - loader was extracted by parent'
+    '// registerLoader skipped - loader was extracted by parent',
   );
 
   // BUT STILL inject Astro context for getLoaderData()
   frontmatter = frontmatter.replace(
     /getLoaderData<typeof loader>\(\)/g,
-    'getLoaderData<typeof loader>(Astro, import.meta.url)'
+    'getLoaderData<typeof loader>(Astro, import.meta.url)',
   );
 }
 ```
 
 ### 4. Registry Coordination
+
 ```typescript
 export function registerLoader(moduleUrl: string, loader: LoaderFn) {
   const registry = requestStorage.getStore();
-  
+
   // Check if loader already registered (e.g., extracted by parent)
   if (registry.has(moduleUrl)) {
     console.log(`⚡ Loader already registered, skipping`);
     return; // Prevent duplicate execution
   }
-  
+
   registry.set(moduleUrl, loader);
 }
 ```
