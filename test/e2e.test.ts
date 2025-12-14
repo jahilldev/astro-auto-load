@@ -624,9 +624,7 @@ describe('E2E', () => {
       const baseUrl = 'http://localhost:4569';
 
       // Test 1: Standard async waterfall (sequential execution)
-      const standardStart = Date.now();
       const standardResponse = await fetch(`${baseUrl}/perf-standard-nested`);
-      const standardResponseTime = Date.now() - standardStart;
       expect(standardResponse.ok).toBe(true);
 
       const standardHtml = await standardResponse.text();
@@ -665,9 +663,7 @@ describe('E2E', () => {
       expect(standardTotalTime).toBeGreaterThan(180);
 
       // Test 2: Parallel loader execution
-      const loaderStart = Date.now();
       const loaderResponse = await fetch(`${baseUrl}/perf-loader-nested`);
-      const loaderResponseTime = Date.now() - loaderStart;
       expect(loaderResponse.ok).toBe(true);
 
       const loaderHtml = await loaderResponse.text();
@@ -744,9 +740,7 @@ describe('E2E', () => {
 
       // Test 1: WITHOUT plugin (standard async waterfall)
       console.log('\n🔴 Testing WITHOUT plugin (standard async waterfall)...');
-      const withoutStart = Date.now();
       const withoutResponse = await fetch(`${baseUrl}/perf-comparison-without-plugin`);
-      const withoutResponseTime = Date.now() - withoutStart;
       expect(withoutResponse.ok).toBe(true);
 
       const withoutHtml = await withoutResponse.text();
@@ -791,9 +785,7 @@ describe('E2E', () => {
 
       // Test 2: WITH plugin (parallel loader execution)
       console.log('🟢 Testing WITH plugin (parallel loader execution)...');
-      const withStart = Date.now();
       const withResponse = await fetch(`${baseUrl}/perf-comparison-with-plugin`);
-      const withResponseTime = Date.now() - withStart;
       expect(withResponse.ok).toBe(true);
 
       const withHtml = await withResponse.text();
@@ -913,9 +905,7 @@ describe('E2E', () => {
       expect(serverReady).toBe(true);
 
       // Test 1: Standard async slot composition (waterfall)
-      const standardStart = Date.now();
       const standardResponse = await fetch('http://localhost:4569/standard-slot-nested');
-      const standardResponseTime = Date.now() - standardStart;
       expect(standardResponse.ok).toBe(true);
 
       const standardHtml = await standardResponse.text();
@@ -966,9 +956,7 @@ describe('E2E', () => {
       expect(standardTotalTime).toBeGreaterThan(180);
 
       // Test 2: Optimized loader-based slot composition (parallel)
-      const loaderStart = Date.now();
       const loaderResponse = await fetch('http://localhost:4569/slot-nested');
-      const loaderResponseTime = Date.now() - loaderStart;
       expect(loaderResponse.ok).toBe(true);
 
       const loaderHtml = await loaderResponse.text();
