@@ -96,7 +96,7 @@ export class LazyLoaderExecutor {
         }
         stableCount++;
       }
-      
+
       if (stableCount >= requiredStableChecks) {
         // Confirmed stable
         return;
@@ -126,8 +126,10 @@ export class LazyLoaderExecutor {
   private async executeBatch(): Promise<void> {
     // Execute ALL registered loaders
     const loadersToExecute = Array.from(this.registry.entries());
-    
-    console.log(`[orchestrator] Executing batch of ${loadersToExecute.length} loaders in parallel`);
+
+    console.log(
+      `[orchestrator] Executing batch of ${loadersToExecute.length} loaders in parallel`,
+    );
     const batchStart = Date.now();
 
     const executions = loadersToExecute.map(async ([moduleUrl, loader]) => {
@@ -145,7 +147,7 @@ export class LazyLoaderExecutor {
     });
 
     await Promise.all(executions);
-    
+
     const batchTime = Date.now() - batchStart;
     console.log(`[orchestrator] Batch completed in ${batchTime}ms`);
   }

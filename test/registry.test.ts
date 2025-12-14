@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { registerLoader, getRegistry, initializeRequestRegistry } from '../src/runtime/registry.js';
+import { describe, it, expect } from 'vitest';
+import {
+  registerLoader,
+  getRegistry,
+  initializeRequestRegistry,
+} from '../src/runtime/registry.js';
 
 describe('Registry', () => {
   it('should register loaders within request context', () => {

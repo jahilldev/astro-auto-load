@@ -251,13 +251,92 @@ describe('E2E', () => {
       expect(diff_parent_child1).toBeLessThan(5);
       expect(diff_parent_child2).toBeLessThan(5);
       expect(diff_child1_child2).toBeLessThan(5);
-      
+
       // Total time should be ~50ms (single parallel batch) not ~150ms (waterfall)
       expect(responseTime).toBeLessThan(100);
 
       expect(html).toContain('Direct Parent');
       expect(html).toContain('Parallel Child 1');
       expect(html).toContain('Parallel Child 2');
+    }, 15000);
+
+    it('should extract and execute loaders from slot-based nested components', async () => {
+      expect(serverReady).toBe(true);
+
+      const startTime = Date.now();
+      const response = await fetch('http://localhost:4567/slot-nested');
+      const responseTime = Date.now() - startTime;
+
+      expect(response.ok).toBe(true);
+
+      const html = await response.text();
+
+      // Extract timing data for all 5 components: SlotWrapper + 4 nested slot components
+      const wrapperMatch = html.match(
+        /class="slot-wrapper" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const parentMatch = html.match(
+        /class="slot-parent" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const child1Match = html.match(
+        /class="slot-child-1" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const child2Match = html.match(
+        /class="slot-child-2" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const grandchildMatch = html.match(
+        /class="slot-grandchild" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+
+      expect(wrapperMatch).toBeTruthy();
+      expect(parentMatch).toBeTruthy();
+      expect(child1Match).toBeTruthy();
+      expect(child2Match).toBeTruthy();
+      expect(grandchildMatch).toBeTruthy();
+
+      const wrapperStart = parseInt(wrapperMatch![1]);
+      const parentStart = parseInt(parentMatch![1]);
+      const child1Start = parseInt(child1Match![1]);
+      const child2Start = parseInt(child2Match![1]);
+      const grandchildStart = parseInt(grandchildMatch![1]);
+
+      // With recursive extraction, ALL 5 loaders execute in parallel!
+      const diff_wrapper_parent = Math.abs(wrapperStart - parentStart);
+      const diff_wrapper_child1 = Math.abs(wrapperStart - child1Start);
+      const diff_wrapper_child2 = Math.abs(wrapperStart - child2Start);
+      const diff_wrapper_grandchild = Math.abs(wrapperStart - grandchildStart);
+
+      console.log(`\n🌲 Slot-Based Recursive Extraction Test:`);
+      console.log(`  Wrapper start:     ${wrapperStart}ms`);
+      console.log(
+        `  Parent start:      ${parentStart}ms (${diff_wrapper_parent}ms from wrapper)`,
+      );
+      console.log(
+        `  Child1 start:      ${child1Start}ms (${diff_wrapper_child1}ms from wrapper)`,
+      );
+      console.log(
+        `  Child2 start:      ${child2Start}ms (${diff_wrapper_child2}ms from wrapper)`,
+      );
+      console.log(
+        `  Grandchild start:  ${grandchildStart}ms (${diff_wrapper_grandchild}ms from wrapper)`,
+      );
+      console.log(`  Total response time: ${responseTime}ms`);
+      console.log(`  ✅ RECURSIVE EXTRACTION WORKING!`);
+
+      // All loaders should start at the same time (within ~5ms)
+      expect(diff_wrapper_parent).toBeLessThan(5);
+      expect(diff_wrapper_child1).toBeLessThan(5);
+      expect(diff_wrapper_child2).toBeLessThan(5);
+      expect(diff_wrapper_grandchild).toBeLessThan(5);
+
+      // Total time should be ~50ms (single batch) not ~250ms (waterfall)
+      expect(responseTime).toBeLessThan(100);
+
+      expect(html).toContain('Slot Wrapper');
+      expect(html).toContain('Slot Parent');
+      expect(html).toContain('Slot Child 1');
+      expect(html).toContain('Slot Child 2');
+      expect(html).toContain('Slot Grandchild');
     }, 15000);
   });
 

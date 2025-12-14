@@ -1,0 +1,17 @@
+---
+import { getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  const duration = Date.now() - start;
+  return { component: 'SlotParent', start, duration };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<div class="slot-parent" data-start={data.start} data-duration={data.duration}>
+  <h3>Slot Parent (took {data.duration}ms)</h3>
+  <slot />
+</div>

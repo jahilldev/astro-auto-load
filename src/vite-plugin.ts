@@ -14,7 +14,7 @@ import { resolve, dirname, relative } from 'path';
  * 4. All loaders (parent + children) execute in ONE parallel batch
  *
  * IMPLEMENTATION:
- * 
+ *
  * Parent Transformation:
  * - Find all directly-imported .astro components
  * - Extract their `export const loader = async () => {...}` functions
@@ -167,43 +167,64 @@ export function astroAutoLoadVitePlugin(): Plugin {
 
       // CHECK: Was this component's loader already extracted by a parent?
       const wasExtracted = extractedLoaders.has(filePath);
-      
+
       if (wasExtracted) {
-        console.log(`[loader-extraction] ⚡ ${filePath.split('/').pop()}: Loader was extracted, skipping registration`);
-        
+        console.log(
+          `[loader-extraction] ⚡ ${filePath.split('/').pop()}: Loader was extracted, skipping registration`,
+        );
+
         // Transform to skip registerLoader call since it was already extracted
         // Remove the registerLoader line entirely
         frontmatter = frontmatter.replace(
           /\nregisterLoader\(import\.meta\.url,\s*loader\);?/,
-          '\n// registerLoader skipped - loader was extracted by parent component'
+          '\n// registerLoader skipped - loader was extracted by parent component',
         );
-        
+
+        // BUT STILL transform getLoaderData() calls to inject Astro and import.meta.url
+        // This is CRITICAL - child components still need to retrieve their data!
+        frontmatter = frontmatter.replace(
+          /getLoaderData<typeof\s+loader>\(\s*\)/g,
+          'getLoaderData<typeof loader>(Astro, import.meta.url)',
+        );
+
+        // Also transform template data access
+        const dataVarMatch = frontmatter.match(
+          /const\s+(\w+)\s*=\s*await\s+getLoaderData<typeof\s+loader>\(/,
+        );
+        if (dataVarMatch) {
+          const dataVarName = dataVarMatch[1];
+          const dataAccessRegex = new RegExp(`\\b${dataVarName}\\.(\\w+)\\b`, 'g');
+          template = template.replace(
+            dataAccessRegex,
+            (match, prop) => `(await Astro.locals.autoLoad.getData(import.meta.url)).${prop}`,
+          );
+        }
+
         // Reconstruct and return early
         const transformed = `---\n${frontmatter}\n---\n${template}`;
         return { code: transformed, map: null };
       }
 
-      // STEP 1: Find ALL components imported by this file
-      const importedComponents: Array<{ name: string; path: string; absolutePath: string }> =
-        [];
-      const importRegex = /import\s+(\w+)\s+from\s+['"]([^'"]+\.astro)['"]/g;
-      let match;
+      // STEP 1: Recursively discover ALL components in the entire tree
+      console.log(
+        `[astro-auto-load] ${filePath.split('/').pop()}: Discovering entire component tree...`,
+      );
 
-      while ((match = importRegex.exec(frontmatter)) !== null) {
-        const componentName = match[1];
-        const importPath = match[2];
-        const absolutePath = resolve(dirname(filePath), importPath);
-        importedComponents.push({ name: componentName, path: importPath, absolutePath });
-      }
+      const allComponentsInTree = await discoverComponentTree(filePath);
+      const componentsWithLoaders = allComponentsInTree.filter(
+        (c) => c.hasLoader && c.filePath !== filePath,
+      );
 
       console.log(
-        `[astro-auto-load] ${filePath.split('/').pop()}: Found ${importedComponents.length} imported component(s)`,
+        `[astro-auto-load] Found ${componentsWithLoaders.length} component(s) with loaders in tree`,
       );
-      if (importedComponents.length > 0) {
-        importedComponents.forEach((c) => console.log(`    - ${c.name} (${c.path})`));
+      if (componentsWithLoaders.length > 0) {
+        componentsWithLoaders.forEach((c) =>
+          console.log(`    - ${c.filePath.split('/').pop()}`),
+        );
       }
 
-      // Step 1: Add registerLoader import if not present
+      // Step 1.5: Add registerLoader import if not present
       if (!frontmatter.includes('registerLoader')) {
         // Check if there's already an import from astro-auto-load/runtime
         const runtimeImportMatch = frontmatter.match(
@@ -223,8 +244,8 @@ export function astroAutoLoadVitePlugin(): Plugin {
         }
       }
 
-      // STEP 2: EXTRACT LOADER FUNCTIONS from ALL imported components
-      // This works for both direct nesting AND slot-based composition
+      // STEP 2: EXTRACT LOADER FUNCTIONS from ALL components in tree (recursive)
+      // This works for direct nesting, slot-based composition, and deep hierarchies
       const extractedLoadersForThis: Array<{
         filePath: string;
         varName: string;
@@ -232,21 +253,15 @@ export function astroAutoLoadVitePlugin(): Plugin {
       }> = [];
 
       console.log(
-        `[astro-auto-load] Attempting to extract loaders from ${importedComponents.length} imported component(s)...`,
+        `[astro-auto-load] Attempting to extract loaders from ${componentsWithLoaders.length} component(s)...`,
       );
 
-      for (const imported of importedComponents) {
+      for (const component of componentsWithLoaders) {
         try {
           const fs = await import('fs/promises');
-          const childCode = await fs.readFile(imported.absolutePath, 'utf-8');
+          const childCode = await fs.readFile(component.filePath, 'utf-8');
 
-          // Check if this component has a loader
-          if (!/export\s+const\s+loader\s*=/.test(childCode)) {
-            console.log(`  → ${imported.name}: No loader found, skipping`);
-            continue;
-          }
-
-          console.log(`  → ${imported.name}: Found loader, extracting...`);
+          console.log(`  → ${component.filePath.split('/').pop()}: Extracting loader...`);
 
           // Extract the loader function from child's frontmatter
           // Pattern: export const loader = async () => { ... };
@@ -259,23 +274,30 @@ export function astroAutoLoadVitePlugin(): Plugin {
             const isAsync = !!loaderMatch[1];
 
             // Generate a unique variable name for this extracted loader
-            const varName = `__extracted_${imported.name}_${Math.random().toString(36).substr(2, 5)}`;
+            const componentName =
+              component.filePath
+                .split('/')
+                .pop()
+                ?.replace(/\.astro$/, '') || 'component';
+            const varName = `__extracted_${componentName}_${Math.random().toString(36).substr(2, 5)}`;
 
             extractedLoadersForThis.push({
-              filePath: imported.absolutePath,
+              filePath: component.filePath,
               varName,
               loaderCode: `const ${varName} = ${isAsync ? 'async ' : ''}() => {${loaderBody}\n};`,
             });
-            
+
             // Mark this component as extracted (globally)
-            extractedLoaders.add(imported.absolutePath);
-            
+            extractedLoaders.add(component.filePath);
+
             console.log(`    ✓ Extracted loader as ${varName}`);
           } else {
-            console.warn(`    ✗ Loader pattern didn't match in ${imported.name}`);
+            console.warn(
+              `    ✗ Loader pattern didn't match in ${component.filePath.split('/').pop()}`,
+            );
           }
         } catch (e) {
-          console.warn(`    ✗ Failed to read ${imported.name}: ${e}`);
+          console.warn(`    ✗ Failed to read ${component.filePath.split('/').pop()}: ${e}`);
         }
       }
 
@@ -290,7 +312,7 @@ export function astroAutoLoadVitePlugin(): Plugin {
         for (const extracted of extractedLoadersForThis) {
           // Convert absolute path to file:// URL to match import.meta.url format
           const fileUrl = `file://${extracted.filePath}`;
-          
+
           eagerLoaderRegistrations += `\n// Extracted loader from ${extracted.filePath.split('/').pop()}`;
           eagerLoaderRegistrations += `\n${extracted.loaderCode}`;
           eagerLoaderRegistrations += `\nregisterLoader('${fileUrl}', ${extracted.varName});`;

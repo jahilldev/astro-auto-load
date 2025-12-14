@@ -116,7 +116,9 @@ export default function autoLoad(): AstroIntegration {
               // Discover entire component tree using module graph
               const allComponents = await discoverComponentTree(server, pageModule);
 
-              console.log(`[astro-auto-load] Found ${allComponents.length} components in tree`);
+              console.log(
+                `[astro-auto-load] Found ${allComponents.length} components in tree`,
+              );
 
               // Eagerly load all component modules (triggers their loader registration)
               await Promise.all(
@@ -128,10 +130,12 @@ export default function autoLoad(): AstroIntegration {
                     // Component might not have a loader or might have errors
                     // This is fine - continue with others
                   }
-                })
+                }),
               );
 
-              console.log(`[astro-auto-load] Pre-loaded all components - loaders ready for parallel execution`);
+              console.log(
+                `[astro-auto-load] Pre-loaded all components - loaders ready for parallel execution`,
+              );
             }
           } catch (error) {
             // Don't break the request if discovery fails
