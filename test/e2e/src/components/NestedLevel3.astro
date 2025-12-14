@@ -1,0 +1,17 @@
+---
+// Nested component with loader - Level 3 (leaf node)
+import { getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return { component: 'NestedLevel3', start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<div class="nested-level3" data-start={data.start} data-duration={data.duration}>
+  <h5>Nested Level 3 (has loader, took {data.duration}ms)</h5>
+  <p>Deepest nested component</p>
+</div>

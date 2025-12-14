@@ -1,0 +1,38 @@
+---
+// Page testing common usage patterns
+import Header from '../components/Header.astro';
+import Sidebar from '../components/Sidebar.astro';
+import Footer from '../components/Footer.astro';
+import ReusableCard from '../components/ReusableCard.astro';
+import NestedLevel1 from '../components/NestedLevel1.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Common Usage Patterns Test</title>
+</head>
+<body>
+  <h1>Common Usage Patterns</h1>
+  
+  <!-- Pattern 1: Component with loader -->
+  <Header />
+  
+  <!-- Pattern 2: Component with loader that imports component without loader -->
+  <Sidebar />
+  
+  <!-- Pattern 3: Component reuse - same component multiple times -->
+  <div class="cards">
+    <ReusableCard title="Card 1" />
+    <ReusableCard title="Card 2" />
+    <ReusableCard title="Card 3" />
+  </div>
+  
+  <!-- Pattern 4: Nested components with loaders (3 levels deep) -->
+  <NestedLevel1 />
+  
+  <!-- Pattern 5: Component without loader -->
+  <Footer content="Main footer" />
+</body>
+</html>

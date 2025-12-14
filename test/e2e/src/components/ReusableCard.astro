@@ -1,0 +1,18 @@
+---
+// Test: Component reuse - same component used multiple times
+import { getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return { component: 'ReusableCard', start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+const { title } = Astro.props;
+---
+
+<div class="reusable-card" data-start={data.start} data-duration={data.duration} data-title={title}>
+  <h3>{title}</h3>
+  <p>Card loaded in {data.duration}ms</p>
+</div>

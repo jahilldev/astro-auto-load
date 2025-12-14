@@ -1,0 +1,18 @@
+---
+// Nested component with loader - Level 1
+import { getLoaderData } from 'astro-auto-load/runtime';
+import NestedLevel2 from './NestedLevel2.astro';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return { component: 'NestedLevel1', start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<div class="nested-level1" data-start={data.start} data-duration={data.duration}>
+  <h3>Nested Level 1 (has loader, took {data.duration}ms)</h3>
+  <NestedLevel2 />
+</div>
