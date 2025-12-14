@@ -1052,9 +1052,9 @@ describe('E2E', () => {
       console.log(`   Total execution time: ${standardTotalTime}ms`);
       console.log('\n🟢 Recursive Loader Extraction (Parallel):');
       console.log(`   All components start: ${loaderTotalTime}ms apart (simultaneous!)`);
-      console.log(`   Total execution time: ${loaderTotalTime}ms`);
+      console.log(`   Timing spread: ${loaderTotalTime}ms (all loaders execute together)`);
       console.log(`\n✨ Performance Improvement: ${improvementPercent.toFixed(1)}% FASTER!`);
-      console.log(`   (${standardTotalTime}ms → ${loaderTotalTime}ms)`);
+      console.log(`   (${standardTotalTime}ms spread → ${loaderTotalTime}ms spread)`);
       console.log('═══════════════════════════════════════════════════════════════\n');
     }, 15000);
   });

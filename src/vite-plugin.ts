@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite';
-import { resolve, dirname, relative } from 'path';
+import { resolve, dirname } from 'path';
 
 /**
  * Vite plugin that transforms .astro files with loaders to enable parallel execution.
@@ -116,35 +116,19 @@ async function discoverComponentTree(
     }
 
     return components;
-  } catch (error) {
+  } catch {
     // File not found or read error - skip
     return components;
   }
 }
 
-/**
- * Calculate a relative import path from one file to another
- */
-function calculateRelativeImport(from: string, to: string): string {
-  const rel = relative(dirname(from), to);
-  // Ensure it starts with ./ or ../
-  const normalized = rel.startsWith('.') ? rel : `./${rel}`;
-  // Remove .astro extension for import
-  return normalized.replace(/\.astro$/, '');
-}
-
 export function astroAutoLoadVitePlugin(): Plugin {
   // Global registry of extracted loaders (shared across all transformations)
   const extractedLoaders = new Set<string>(); // Set of absolute file paths
-  let viteServer: any = null;
 
   return {
     name: 'astro-auto-load-vite-plugin',
     enforce: 'pre', // Run BEFORE Astro's compiler
-
-    configureServer(server) {
-      viteServer = server;
-    },
 
     async load(id) {
       if (!id.endsWith('.astro')) return null;
@@ -175,10 +159,6 @@ export function astroAutoLoadVitePlugin(): Plugin {
       const wasExtracted = extractedLoaders.has(filePath);
 
       if (wasExtracted) {
-        console.log(
-          `[loader-extraction] ⚡ ${filePath.split('/').pop()}: Loader was extracted, skipping registration`,
-        );
-
         // Transform to skip registerLoader call since it was already extracted
         // Remove the registerLoader line entirely
         frontmatter = frontmatter.replace(
@@ -197,6 +177,7 @@ export function astroAutoLoadVitePlugin(): Plugin {
         const dataVarMatch = frontmatter.match(
           /const\s+(\w+)\s*=\s*await\s+getLoaderData<typeof\s+loader>\(/,
         );
+
         if (dataVarMatch) {
           const dataVarName = dataVarMatch[1];
           const dataAccessRegex = new RegExp(`\\b${dataVarName}\\.(\\w+)\\b`, 'g');
@@ -212,25 +193,10 @@ export function astroAutoLoadVitePlugin(): Plugin {
       }
 
       // STEP 1: Recursively discover ALL components in the entire tree
-      const fileName = filePath.split('/').pop();
-      const hasOwnLoader = hasLoaderExport ? 'with loader' : 'auto-wrapper';
-      console.log(
-        `[astro-auto-load] ${fileName} (${hasOwnLoader}): Discovering entire component tree...`,
-      );
-
       const allComponentsInTree = await discoverComponentTree(filePath);
       const componentsWithLoaders = allComponentsInTree.filter(
         (c) => c.hasLoader && c.filePath !== filePath,
       );
-
-      console.log(
-        `[astro-auto-load] Found ${componentsWithLoaders.length} component(s) with loaders in tree`,
-      );
-      if (componentsWithLoaders.length > 0) {
-        componentsWithLoaders.forEach((c) =>
-          console.log(`    - ${c.filePath.split('/').pop()}`),
-        );
-      }
 
       // If no loaders found in tree and this file doesn't have a loader, skip processing
       if (componentsWithLoaders.length === 0 && !hasLoaderExport) {
@@ -265,16 +231,10 @@ export function astroAutoLoadVitePlugin(): Plugin {
         loaderCode: string;
       }> = [];
 
-      console.log(
-        `[astro-auto-load] Attempting to extract loaders from ${componentsWithLoaders.length} component(s)...`,
-      );
-
       for (const component of componentsWithLoaders) {
         try {
           const fs = await import('fs/promises');
           const childCode = await fs.readFile(component.filePath, 'utf-8');
-
-          console.log(`  → ${component.filePath.split('/').pop()}: Extracting loader...`);
 
           // Extract the loader function from child's frontmatter
           // Pattern: export const loader = async () => { ... };
@@ -292,7 +252,7 @@ export function astroAutoLoadVitePlugin(): Plugin {
                 .split('/')
                 .pop()
                 ?.replace(/\.astro$/, '') || 'component';
-            const varName = `__extracted_${componentName}_${Math.random().toString(36).substr(2, 5)}`;
+            const varName = `__extracted_${componentName}_${Math.random().toString(36).substring(2, 7)}`;
 
             extractedLoadersForThis.push({
               filePath: component.filePath,
@@ -302,15 +262,9 @@ export function astroAutoLoadVitePlugin(): Plugin {
 
             // Mark this component as extracted (globally)
             extractedLoaders.add(component.filePath);
-
-            console.log(`    ✓ Extracted loader as ${varName}`);
-          } else {
-            console.warn(
-              `    ✗ Loader pattern didn't match in ${component.filePath.split('/').pop()}`,
-            );
           }
-        } catch (e) {
-          console.warn(`    ✗ Failed to read ${component.filePath.split('/').pop()}: ${e}`);
+        } catch {
+          // Failed to read component - skip
         }
       }
 
@@ -318,10 +272,6 @@ export function astroAutoLoadVitePlugin(): Plugin {
       let eagerLoaderRegistrations = '';
 
       if (extractedLoadersForThis.length > 0) {
-        console.log(
-          `[astro-auto-load] Injecting ${extractedLoadersForThis.length} extracted loader(s) into frontmatter`,
-        );
-
         for (const extracted of extractedLoadersForThis) {
           // Convert absolute path to file:// URL to match import.meta.url format
           const fileUrl = `file://${extracted.filePath}`;
@@ -329,7 +279,6 @@ export function astroAutoLoadVitePlugin(): Plugin {
           eagerLoaderRegistrations += `\n// Extracted loader from ${extracted.filePath.split('/').pop()}`;
           eagerLoaderRegistrations += `\n${extracted.loaderCode}`;
           eagerLoaderRegistrations += `\nregisterLoader('${fileUrl}', ${extracted.varName});`;
-          eagerLoaderRegistrations += `\nconsole.log('[loader-extraction] ✓ Registered ${extracted.varName} for ${extracted.filePath.split('/').pop()}');`;
         }
       }
 
