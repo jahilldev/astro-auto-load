@@ -861,11 +861,11 @@ describe('E2E', () => {
       console.log('\n📊 Performance Comparison: Parallel Loaders vs Standard Async');
       console.log('═══════════════════════════════════════════════════════════════');
       console.log('\n🔹 NESTED Components (Level1 > Level2 > Level3):');
-      console.log(`   Standard Waterfall:  ~${standardTotalSpread}ms (sequential execution)`);
-      console.log(
-        `   Parallel Loaders:    ~${loaderTotalSpread}ms (all parallel with wrapper pattern!)`,
-      );
-      console.log(`   → Performance Improvement: ${improvementPercent.toFixed(1)}% FASTER!`);
+      console.log('   Standard Waterfall:');
+      console.log(`     • Timing spread: ${standardTotalSpread}ms (each waits for previous)`);
+      console.log(`   Parallel Loaders:`);
+      console.log(`     • Timing spread: ${loaderTotalSpread}ms (all start simultaneously!)`);
+      console.log(`   → Sequential delays eliminated: ${improvementPercent.toFixed(1)}%`);
       console.log('\n🔹 SIBLING Components (from parallel execution test):');
       console.log('   Standard Async:      ~150ms (sequential: 50ms × 3)');
       console.log('   Parallel Loaders:    ~50ms (all execute in parallel!)');
