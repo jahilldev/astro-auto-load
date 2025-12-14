@@ -36,17 +36,26 @@ export class LazyLoaderExecutor {
   /**
    * Request data from a specific loader.
    * Queues the loader for execution and returns a promise that resolves when done.
-   * All getData() calls in the same tick are batched together.
+   * All getData() calls during the entire render share the same batch.
    */
   async getData(moduleUrl: string): Promise<unknown> {
     // Add to the batch
     this.requestedLoaders.add(moduleUrl);
 
+    // If this loader wasn't executed in a previous batch, and a batch already completed,
+    // we need to schedule a new batch for late arrivals
+    if (this.isBatchScheduled && !this.results.has(moduleUrl) && !this.errors.has(moduleUrl)) {
+      //Reset and schedule new batch
+      this.batchPromise = null;
+      this.isBatchScheduled = false;
+    }
+
     // Schedule batch execution if not already scheduled
-    if (!this.isBatchScheduled) {
+    if (!this.batchPromise) {
       this.isBatchScheduled = true;
-      // Use setImmediate to allow all synchronous component imports to complete
-      this.batchPromise = new Promise(resolve => setImmediate(resolve)).then(() => this.executeBatch());
+      // Wait for registry to stabilize before executing batch
+      // This allows nested components to register their loaders
+      this.batchPromise = this.waitForRegistryStability().then(() => this.executeBatch());
     }
 
     // Wait for the batch to complete
@@ -58,6 +67,28 @@ export class LazyLoaderExecutor {
     }
 
     return this.results.get(moduleUrl);
+  }
+
+  /**
+   * Wait for the registry to stabilize (no new loaders being added).
+   * This ensures all nested components have registered before we execute.
+   */
+  private async waitForRegistryStability(): Promise<void> {
+    let lastSize = this.registry.size;
+    let stableCount = 0;
+    const requiredStableChecks = 50; // Require many consecutive stable checks
+    
+    while (stableCount < requiredStableChecks) {
+      await new Promise(resolve => setImmediate(resolve));
+      const currentSize = this.registry.size;
+      
+      if (currentSize === lastSize) {
+        stableCount++;
+      } else {
+        stableCount = 0; // Reset if size changed
+        lastSize = currentSize;
+      }
+    }
   }
 
   /**

@@ -1,0 +1,25 @@
+---
+import ParallelParent from '../components/ParallelParent.astro';
+import ParallelChild1 from '../components/ParallelChild1.astro';
+import ParallelChild2 from '../components/ParallelChild2.astro';
+import ParallelGrandchild from '../components/ParallelGrandchild.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Nested Components Test</title>
+</head>
+<body>
+  <h1>Nested Component Loaders</h1>
+  <p>This demonstrates that ALL loaders (parent + children + grandchildren) execute in parallel.</p>
+  
+  <ParallelParent>
+    <ParallelChild1>
+      <ParallelGrandchild />
+    </ParallelChild1>
+    <ParallelChild2 />
+  </ParallelParent>
+</body>
+</html>

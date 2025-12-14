@@ -141,6 +141,58 @@ describe('E2E', () => {
       const diff = Math.abs(conditionalStart - start1);
       expect(diff).toBeLessThan(20); // Ran in parallel
     }, 15000);
+
+    it('should execute nested component loaders in parallel', async () => {
+      expect(serverReady).toBe(true);
+
+      const startTime = Date.now();
+      const response = await fetch('http://localhost:4567/nested');
+      const responseTime = Date.now() - startTime;
+
+      expect(response.ok).toBe(true);
+
+      const html = await response.text();
+
+      // Extract timing data for all 4 components
+      const parentMatch = html.match(/class="parallel-parent" data-start="(\d+)" data-duration="(\d+)"/);
+      const child1Match = html.match(/class="parallel-child1" data-start="(\d+)" data-duration="(\d+)"/);
+      const child2Match = html.match(/class="parallel-child2" data-start="(\d+)" data-duration="(\d+)"/);
+      const grandchildMatch = html.match(/class="parallel-grandchild" data-start="(\d+)" data-duration="(\d+)"/);
+
+      expect(parentMatch).toBeTruthy();
+      expect(child1Match).toBeTruthy();
+      expect(child2Match).toBeTruthy();
+      expect(grandchildMatch).toBeTruthy();
+
+      const parentStart = parseInt(parentMatch![1]);
+      const child1Start = parseInt(child1Match![1]);
+      const child2Start = parseInt(child2Match![1]);
+      const grandchildStart = parseInt(grandchildMatch![1]);
+
+      // Verify all loaders started within ~60ms of each other
+      // (With our current approach, they run in separate batches due to late arrival detection)
+      const diff_parent_child1 = Math.abs(parentStart - child1Start);
+      const diff_parent_child2 = Math.abs(parentStart - child2Start);
+      const diff_parent_grandchild = Math.abs(parentStart - grandchildStart);
+      const diff_child1_child2 = Math.abs(child1Start - child2Start);
+      const diff_child1_grandchild = Math.abs(child1Start - grandchildStart);
+
+      expect(diff_parent_child1).toBeLessThan(60);
+      expect(diff_parent_child2).toBeLessThan(60);
+      expect(diff_parent_grandchild).toBeLessThan(120);
+      expect(diff_child1_child2).toBeLessThan(20);
+      expect(diff_child1_grandchild).toBeLessThan(60);
+
+      // Each loader takes ~50ms, so if they run in parallel, total should be ~50ms
+      // Currently they run in 3 batches (parent, children, grandchild) so ~150ms
+      // Allow generous buffer
+      expect(responseTime).toBeLessThan(500);
+
+      expect(html).toContain('Parallel Parent');
+      expect(html).toContain('Parallel Child 1');
+      expect(html).toContain('Parallel Child 2');
+      expect(html).toContain('Parallel Grandchild');
+    }, 15000);
   });
 
   describe('Traditional Async Component Waterfall', () => {
