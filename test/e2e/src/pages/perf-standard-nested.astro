@@ -1,7 +1,5 @@
 ---
-import PerfStandardLevel1 from '../components/PerfStandardLevel1.astro';
-import PerfStandardLevel2 from '../components/PerfStandardLevel2.astro';
-import PerfStandardLevel3 from '../components/PerfStandardLevel3.astro';
+import StandardComponent100 from '../components/StandardComponent100.astro';
 ---
 
 <html>
@@ -10,10 +8,10 @@ import PerfStandardLevel3 from '../components/PerfStandardLevel3.astro';
   </head>
   <body>
     <h1>Standard Async Waterfall (Nested)</h1>
-    <PerfStandardLevel1>
-      <PerfStandardLevel2>
-        <PerfStandardLevel3 />
-      </PerfStandardLevel2>
-    </PerfStandardLevel1>
+    <StandardComponent100 name="PerfStandardLevel1" className="perf-standard-level1">
+      <StandardComponent100 name="PerfStandardLevel2" className="perf-standard-level2">
+        <StandardComponent100 name="PerfStandardLevel3" className="perf-standard-level3" />
+      </StandardComponent100>
+    </StandardComponent100>
   </body>
 </html>

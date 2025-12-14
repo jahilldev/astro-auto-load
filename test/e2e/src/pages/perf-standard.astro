@@ -1,7 +1,5 @@
 ---
-import StandardSlow1 from '../components/StandardSlow1.astro';
-import StandardSlow2 from '../components/StandardSlow2.astro';
-import StandardSlow3 from '../components/StandardSlow3.astro';
+import StandardComponent from '../components/StandardComponent.astro';
 
 const pageStart = Date.now();
 ---
@@ -18,9 +16,9 @@ const pageStart = Date.now();
   
   <h2>Standard Async Components (Waterfall Pattern)</h2>
   <p>These execute sequentially - each waits for the previous to complete.</p>
-  <StandardSlow1 />
-  <StandardSlow2 />
-  <StandardSlow3 />
+  <StandardComponent name="StandardSlow1" className="standard-slow1" />
+  <StandardComponent name="StandardSlow2" className="standard-slow2" />
+  <StandardComponent name="StandardSlow3" className="standard-slow3" />
   
   <p>Page End: {Date.now()} (Total: {Date.now() - pageStart}ms)</p>
 </body>

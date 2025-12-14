@@ -218,10 +218,10 @@ describe('E2E', () => {
       // Allow generous buffer
       expect(responseTime).toBeLessThan(500);
 
-      expect(html).toContain('Parallel Parent');
-      expect(html).toContain('Parallel Child 1');
-      expect(html).toContain('Parallel Child 2');
-      expect(html).toContain('Parallel Grandchild');
+      expect(html).toContain('ParallelParent:');
+      expect(html).toContain('ParallelChild1:');
+      expect(html).toContain('ParallelChild2:');
+      expect(html).toContain('ParallelGrandchild:');
     }, 15000);
 
     it('should extract and execute loaders from directly imported components', async () => {
@@ -278,8 +278,8 @@ describe('E2E', () => {
       expect(responseTime).toBeLessThan(100);
 
       expect(html).toContain('Direct Parent');
-      expect(html).toContain('Parallel Child 1');
-      expect(html).toContain('Parallel Child 2');
+      expect(html).toContain('ParallelChild1:');
+      expect(html).toContain('ParallelChild2:');
     }, 15000);
 
     it('should extract and execute loaders from slot-based nested components', async () => {
@@ -355,10 +355,10 @@ describe('E2E', () => {
       expect(responseTime).toBeLessThan(100);
 
       expect(html).toContain('Slot Wrapper');
-      expect(html).toContain('Slot Parent');
-      expect(html).toContain('Slot Child 1');
-      expect(html).toContain('Slot Child 2');
-      expect(html).toContain('Slot Grandchild');
+      expect(html).toContain('SlotParent:');
+      expect(html).toContain('SlotChild1:');
+      expect(html).toContain('SlotChild2:');
+      expect(html).toContain('SlotGrandchild:');
     }, 15000);
 
     it('should auto-wrap pages without loaders that import components', async () => {
@@ -406,10 +406,10 @@ describe('E2E', () => {
       console.log('   ✅ Automatic wrapper pattern working!');
 
       expect(html).toContain('Automatic Wrapper Pattern');
-      expect(html).toContain('Slot Parent');
-      expect(html).toContain('Slot Child 1');
-      expect(html).toContain('Slot Child 2');
-      expect(html).toContain('Slot Grandchild');
+      expect(html).toContain('SlotParent:');
+      expect(html).toContain('SlotChild1:');
+      expect(html).toContain('SlotChild2:');
+      expect(html).toContain('SlotGrandchild:');
     }, 15000);
 
     it('should handle common usage patterns correctly', async () => {
