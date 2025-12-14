@@ -1,7 +1,5 @@
 ---
-import PerfLoaderLevel1 from '../components/PerfLoaderLevel1.astro';
-import PerfLoaderLevel2 from '../components/PerfLoaderLevel2.astro';
-import PerfLoaderLevel3 from '../components/PerfLoaderLevel3.astro';
+import PerfLoaderWrapper from '../components/PerfLoaderWrapper.astro';
 ---
 
 <html>
@@ -10,10 +8,6 @@ import PerfLoaderLevel3 from '../components/PerfLoaderLevel3.astro';
   </head>
   <body>
     <h1>Parallel Loader Execution (Nested)</h1>
-    <PerfLoaderLevel1>
-      <PerfLoaderLevel2>
-        <PerfLoaderLevel3 />
-      </PerfLoaderLevel2>
-    </PerfLoaderLevel1>
+    <PerfLoaderWrapper />
   </body>
 </html>

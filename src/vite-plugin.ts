@@ -156,7 +156,13 @@ export function astroAutoLoadVitePlugin(): Plugin {
       // Check for 'export const loader' in frontmatter
       const hasLoaderExport = /export\s+(const|async\s+function)\s+loader\s*[=(]/m.test(code);
 
-      if (!hasLoaderExport) return null;
+      // Check if this file imports .astro components (for automatic wrapper pattern)
+      const hasAstroImports = /import\s+.*\s+from\s+['"][^'"]*\.astro['"]/m.test(code);
+
+      // Process files that either:
+      // 1. Have a loader export (normal case), OR
+      // 2. Import .astro components (automatic wrapper - extract child loaders even without own loader)
+      if (!hasLoaderExport && !hasAstroImports) return null;
 
       // Parse the .astro file structure first
       const frontmatterMatch = code.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
@@ -206,8 +212,10 @@ export function astroAutoLoadVitePlugin(): Plugin {
       }
 
       // STEP 1: Recursively discover ALL components in the entire tree
+      const fileName = filePath.split('/').pop();
+      const hasOwnLoader = hasLoaderExport ? 'with loader' : 'auto-wrapper';
       console.log(
-        `[astro-auto-load] ${filePath.split('/').pop()}: Discovering entire component tree...`,
+        `[astro-auto-load] ${fileName} (${hasOwnLoader}): Discovering entire component tree...`,
       );
 
       const allComponentsInTree = await discoverComponentTree(filePath);
@@ -222,6 +230,11 @@ export function astroAutoLoadVitePlugin(): Plugin {
         componentsWithLoaders.forEach((c) =>
           console.log(`    - ${c.filePath.split('/').pop()}`),
         );
+      }
+
+      // If no loaders found in tree and this file doesn't have a loader, skip processing
+      if (componentsWithLoaders.length === 0 && !hasLoaderExport) {
+        return null;
       }
 
       // Step 1.5: Add registerLoader import if not present
@@ -324,48 +337,57 @@ export function astroAutoLoadVitePlugin(): Plugin {
       if (eagerLoaderRegistrations) {
         const registerImportRegex =
           /import\s+\{[^}]*registerLoader[^}]*\}\s+from\s+['"]astro-auto-load\/runtime['"]\s*;?\s*\n/;
+
         if (registerImportRegex.test(frontmatter)) {
+          // Already has registerLoader import, inject after it
           frontmatter = frontmatter.replace(
             registerImportRegex,
             (match) => match + eagerLoaderRegistrations,
           );
+        } else {
+          // No registerLoader import yet - add it automatically for files with .astro imports
+          frontmatter =
+            `import { registerLoader } from 'astro-auto-load/runtime';\n` +
+            frontmatter +
+            eagerLoaderRegistrations;
         }
       }
 
-      // STEP 4: Generate loader registration code for THIS component
-      // The child loaders are already registered above via extraction
-      let registrationCode = '\nregisterLoader(import.meta.url, loader);';
+      // STEP 4: Generate loader registration code for THIS component (only if it has a loader)
+      if (hasLoaderExport) {
+        let registrationCode = '\nregisterLoader(import.meta.url, loader);';
 
-      // STEP 5: Inject registrations after loader definition
-      frontmatter = frontmatter.replace(
-        /(export\s+const\s+loader\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
-        `$1${registrationCode}`,
-      );
-
-      // STEP 6: CRITICAL - Remove blocking await from frontmatter
-      // Match: const data = await getLoaderData<typeof loader>();
-      // This is what blocks child components from registering!
-      const dataVarMatch = frontmatter.match(
-        /const\s+(\w+)\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?/,
-      );
-
-      if (dataVarMatch) {
-        const dataVarName = dataVarMatch[1]; // e.g., "data"
-
-        // Remove the blocking await line (handle with or without trailing newline)
+        // STEP 5: Inject registrations after loader definition
         frontmatter = frontmatter.replace(
-          /const\s+\w+\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?(\s*\n)?/,
-          '// Data access deferred to template for non-blocking parallel execution\n',
+          /(export\s+const\s+loader\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
+          `$1${registrationCode}`,
         );
 
-        // STEP 7: Transform template to access data from Astro.locals
-        // Replace all occurrences of {data.prop} or data-attr={data.prop}
-        // with direct calls to Astro.locals.autoLoad
-        const dataAccessRegex = new RegExp(`\\b${dataVarName}\\.(\\w+)\\b`, 'g');
-        template = template.replace(
-          dataAccessRegex,
-          (match, prop) => `(await Astro.locals.autoLoad.getData(import.meta.url)).${prop}`,
+        // STEP 6: CRITICAL - Remove blocking await from frontmatter
+        // Match: const data = await getLoaderData<typeof loader>();
+        // This is what blocks child components from registering!
+        const dataVarMatch = frontmatter.match(
+          /const\s+(\w+)\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?/,
         );
+
+        if (dataVarMatch) {
+          const dataVarName = dataVarMatch[1]; // e.g., "data"
+
+          // Remove the blocking await line (handle with or without trailing newline)
+          frontmatter = frontmatter.replace(
+            /const\s+\w+\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?(\s*\n)?/,
+            '// Data access deferred to template for non-blocking parallel execution\n',
+          );
+
+          // STEP 7: Transform template to access data from Astro.locals
+          // Replace all occurrences of {data.prop} or data-attr={data.prop}
+          // with direct calls to Astro.locals.autoLoad
+          const dataAccessRegex = new RegExp(`\\b${dataVarName}\\.(\\w+)\\b`, 'g');
+          template = template.replace(
+            dataAccessRegex,
+            (match, prop) => `(await Astro.locals.autoLoad.getData(import.meta.url)).${prop}`,
+          );
+        }
       }
 
       // Reconstruct the .astro file

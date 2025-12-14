@@ -339,6 +339,57 @@ describe('E2E', () => {
       expect(html).toContain('Slot Grandchild');
     }, 15000);
 
+    it('should auto-wrap pages without loaders that import components', async () => {
+      expect(serverReady).toBe(true);
+
+      const response = await fetch('http://localhost:4567/auto-wrapper-test');
+      expect(response.ok).toBe(true);
+
+      const html = await response.text();
+
+      // Extract timing data - page has NO loader, but should auto-extract children's loaders
+      const parent = html.match(
+        /class="slot-parent" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const child1 = html.match(
+        /class="slot-child-1" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const child2 = html.match(
+        /class="slot-child-2" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const grandchild = html.match(
+        /class="slot-grandchild" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+
+      expect(parent).toBeTruthy();
+      expect(child1).toBeTruthy();
+      expect(child2).toBeTruthy();
+      expect(grandchild).toBeTruthy();
+
+      const parentStart = parseInt(parent![1]);
+      const child1Start = parseInt(child1![1]);
+      const child2Start = parseInt(child2![1]);
+      const grandchildStart = parseInt(grandchild![1]);
+
+      // All loaders should execute in parallel (within 5ms of each other)
+      const times = [parentStart, child1Start, child2Start, grandchildStart];
+      const minTime = Math.min(...times);
+      const maxTime = Math.max(...times);
+      const timeDifference = maxTime - minTime;
+
+      expect(timeDifference).toBeLessThan(5);
+
+      console.log('\n🔧 Auto-Wrapper Test (Page without loader):');
+      console.log(`   All 4 components started within ${timeDifference}ms of each other`);
+      console.log('   ✅ Automatic wrapper pattern working!');
+
+      expect(html).toContain('Automatic Wrapper Pattern');
+      expect(html).toContain('Slot Parent');
+      expect(html).toContain('Slot Child 1');
+      expect(html).toContain('Slot Child 2');
+      expect(html).toContain('Slot Grandchild');
+    }, 15000);
+
     it('should demonstrate performance improvement over standard async slot composition', async () => {
       expect(serverReady).toBe(true);
 
@@ -410,8 +461,12 @@ describe('E2E', () => {
       const loaderParent = loaderHtml.match(
         /class="slot-parent" data-start="(\d+)" data-duration="(\d+)"/,
       );
-      const loaderChild1 = loaderHtml.match(/class="slot-child-1" data-start="(\d+)" data-duration="(\d+)"/);
-      const loaderChild2 = loaderHtml.match(/class="slot-child-2" data-start="(\d+)" data-duration="(\d+)"/);
+      const loaderChild1 = loaderHtml.match(
+        /class="slot-child-1" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const loaderChild2 = loaderHtml.match(
+        /class="slot-child-2" data-start="(\d+)" data-duration="(\d+)"/,
+      );
       const loaderGrandchild = loaderHtml.match(
         /class="slot-grandchild" data-start="(\d+)" data-duration="(\d+)"/,
       );
@@ -432,7 +487,9 @@ describe('E2E', () => {
       const loaderDiff_wrapper_parent = Math.abs(loaderParentStart - loaderWrapperStart);
       const loaderDiff_wrapper_child1 = Math.abs(loaderChild1Start - loaderWrapperStart);
       const loaderDiff_wrapper_child2 = Math.abs(loaderChild2Start - loaderWrapperStart);
-      const loaderDiff_wrapper_grandchild = Math.abs(loaderGrandchildStart - loaderWrapperStart);
+      const loaderDiff_wrapper_grandchild = Math.abs(
+        loaderGrandchildStart - loaderWrapperStart,
+      );
 
       // All loaders should start within 5ms of each other
       expect(loaderDiff_wrapper_parent).toBeLessThan(5);
@@ -462,7 +519,8 @@ describe('E2E', () => {
       expect(loaderTotalTime).toBeLessThan(standardTotalTime * 0.1); // At least 90% faster
 
       // Calculate performance improvement
-      const improvementPercent = ((standardTotalTime - loaderTotalTime) / standardTotalTime) * 100;
+      const improvementPercent =
+        ((standardTotalTime - loaderTotalTime) / standardTotalTime) * 100;
       expect(improvementPercent).toBeGreaterThan(90); // Should be >90% faster
 
       console.log('\n🌲 Slot-Based Composition Performance Comparison');
@@ -661,14 +719,15 @@ describe('E2E', () => {
       const loaderStart2 = parseInt(loaderLevel2![1]);
       const loaderStart3 = parseInt(loaderLevel3![1]);
 
-      // Loaders execute in batches, but multiple batches are allowed for nested components
-      // Batch 1: Level 1, Batch 2: Level 2, Batch 3: Level 3
-      // However, batches execute much closer together than sequential waterfall
+      // With the wrapper pattern, ALL loaders now execute in parallel!
+      // Wrapper component imports all nested components, triggering recursive extraction
       const loaderDiff_1_to_2 = Math.abs(loaderStart2 - loaderStart1);
       const loaderDiff_2_to_3 = Math.abs(loaderStart3 - loaderStart2);
 
-      // Loaders should execute faster overall than standard waterfall
-      // The total time spread should be less than standard waterfall's sequential execution
+      // All 3 loaders should start within 5ms of each other (parallel execution)
+      expect(loaderDiff_1_to_2).toBeLessThan(5);
+      expect(loaderDiff_2_to_3).toBeLessThan(5);
+
       const standardTotalSpread = standardDiff_1_to_2 + standardDiff_2_to_3;
       const loaderTotalSpread = loaderDiff_1_to_2 + loaderDiff_2_to_3;
 
@@ -677,39 +736,33 @@ describe('E2E', () => {
         Math.max(loaderStart3, loaderStart2, loaderStart1) -
         Math.min(loaderStart1, loaderStart2, loaderStart3);
 
-      // Loader execution should have less total spread (more parallel/batched)
-      // In this nested case, loaders execute in sequential batches, so the improvement may be marginal
-      // The key is that it's not significantly worse than standard approach
-      expect(loaderTotalSpread).toBeLessThanOrEqual(standardTotalSpread + 20); // Allow small overhead
-
-      // Total response time comparison
-      // Both approaches should work, but loaders should be faster for nested components
+      // Loader execution should be MUCH faster than waterfall
+      expect(loaderTotalTime).toBeLessThan(10); // Should be ~0ms (all parallel)
+      expect(loaderTotalSpread).toBeLessThan(standardTotalSpread * 0.1); // At least 90% faster
 
       // Performance improvement calculation based on execution time spread
-      // For deeply nested components, performance is comparable to standard async
-      // The real benefit is for sibling components (tested elsewhere)
       const improvementPercent =
         ((standardTotalSpread - loaderTotalSpread) / standardTotalSpread) * 100;
 
-      // Loaders should be within 10% of standard performance (not significantly worse)
-      expect(improvementPercent).toBeGreaterThan(-10);
+      // Should be significantly better (>90% improvement)
+      expect(improvementPercent).toBeGreaterThan(90);
 
       console.log('\n📊 Performance Comparison: Parallel Loaders vs Standard Async');
       console.log('═══════════════════════════════════════════════════════════════');
       console.log('\n🔹 NESTED Components (Level1 > Level2 > Level3):');
-      console.log('   Standard Waterfall:  ~200ms (sequential execution)');
-      console.log(`   Parallel Loaders:    ~${loaderTotalSpread}ms (batched execution)`);
+      console.log(`   Standard Waterfall:  ~${standardTotalSpread}ms (sequential execution)`);
       console.log(
-        `   → Difference: ${improvementPercent.toFixed(1)}% (comparable - both sequential due to nesting)`,
+        `   Parallel Loaders:    ~${loaderTotalSpread}ms (all parallel with wrapper pattern!)`,
       );
+      console.log(`   → Performance Improvement: ${improvementPercent.toFixed(1)}% FASTER!`);
       console.log('\n🔹 SIBLING Components (from parallel execution test):');
       console.log('   Standard Async:      ~150ms (sequential: 50ms × 3)');
       console.log('   Parallel Loaders:    ~50ms (all execute in parallel!)');
       console.log('   → Performance Win: ~67% FASTER!');
       console.log(
-        '\n✅ Summary: Parallel loaders eliminate waterfalls for sibling components',
+        '\n✅ Summary: Recursive loader extraction with wrapper pattern eliminates',
       );
-      console.log('   while maintaining comparable performance for nested components.');
+      console.log('   waterfalls for BOTH nested AND sibling components!');
       console.log('═══════════════════════════════════════════════════════════════\n');
     }, 15000);
   });

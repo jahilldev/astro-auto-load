@@ -1,0 +1,23 @@
+---
+import { getLoaderData } from 'astro-auto-load/runtime';
+import PerfLoaderLevel1 from './PerfLoaderLevel1.astro';
+import PerfLoaderLevel2 from './PerfLoaderLevel2.astro';
+import PerfLoaderLevel3 from './PerfLoaderLevel3.astro';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  return { start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<div class="perf-loader-wrapper" data-start={data.start} data-duration={data.duration}>
+  <h2>Performance Loader Wrapper (took {data.duration}ms)</h2>
+  <PerfLoaderLevel1>
+    <PerfLoaderLevel2>
+      <PerfLoaderLevel3 />
+    </PerfLoaderLevel2>
+  </PerfLoaderLevel1>
+</div>
