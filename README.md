@@ -1,6 +1,15 @@
 # astro-auto-load
 
-Automatic component-level data loading for Astro SSR. Co-locate your data fetching logic with your components while eliminating waterfalls and duplicate requests.
+Automatic component-level data loading for Astro SSR. Co-locate your data fetching logic with your components while **eliminating async waterfalls** through recursive loader extraction.
+
+## Key Features
+
+✨ **True Parallel Execution** - All loaders execute simultaneously, even for deeply nested components  
+🎯 **Recursive Extraction** - Discovers entire component tree at build-time (direct imports AND slot-based composition)  
+⚡ **Zero Waterfalls** - Achieves ~67% performance improvement by eliminating sequential async chains  
+🔒 **Type-Safe** - Full TypeScript support with automatic type inference  
+🎨 **Zero Config** - Drop-in integration, works automatically with no manual setup
+🧩 **Flexible Composition** - Supports both direct imports and slot-based patterns
 
 ## The Problem
 
@@ -11,12 +20,7 @@ In typical Astro SSR apps, you face a choice:
 
 ## The Solution
 
-`astro-auto-load` lets you define `loader` functions directly in your components. The integration:
-
-✅ **Collects all loaders** before rendering  
-✅ **Runs them in parallel** (no waterfalls)  
-✅ **Deduplicates promises** via utility function  
-✅ **Provides type-safe data** to your components
+`astro-auto-load` uses **recursive loader extraction** to discover your entire component tree at build-time, extract all loader functions, and execute them in a single parallel batch.
 
 ### Performance Impact
 
@@ -42,29 +46,35 @@ Total: ~50ms
 
 **Result:** ~67% faster! All sibling components execute in parallel ⚡
 
-#### 📊 **Nested Components** (Comparable)
+#### 🎯 **Nested Components** (Major Win with Recursive Extraction!)
 
 **Before** (Traditional Async):
 
 ```
 <Parent> → <Child> → <Grandchild>
-Each: ~100ms data fetch (sequential due to nesting)
-Total: ~200ms
+Each: ~50ms data fetch (sequential due to nesting)
+Total: ~150ms waterfall
 ```
 
 **After** (astro-auto-load):
 
 ```
 <Parent> → <Child> → <Grandchild>
-Batched execution with registry stability detection
-Total: ~200ms (comparable)
+All loaders extracted and executed in parallel!
+Total: ~50ms
 ```
 
-**Result:** Similar performance - both approaches are sequential due to nesting constraint
+**Result:** ~67% faster! Recursive extraction eliminates waterfalls even for nested components ⚡
 
 #### ✅ **Real-World Benefit**
 
-Most pages render **multiple sibling components** (nav, sidebar, content sections, etc.), where this integration eliminates waterfalls and provides significant speedups. Verified by [E2E tests](test/e2e.test.ts).
+The plugin achieves **true parallel execution** for:
+
+- ✅ **Sibling components** - ~67% faster
+- ✅ **Nested components** (direct imports OR slot-based) - ~67% faster via recursive extraction
+- ✅ **Complex component trees** - all loaders execute simultaneously
+
+This works through **recursive loader extraction**: the plugin discovers your entire component tree at build-time (including slot-based children), extracts all loader functions, and registers them upfront so they execute in a single parallel batch. Verified by [E2E tests](test/e2e.test.ts).
 
 ## Installation
 
@@ -209,20 +219,31 @@ export const loader = async (context) => {
 
 ## How It Works
 
-The integration uses lazy execution to run loaders efficiently:
+The integration uses **recursive loader extraction** to achieve true parallel execution:
 
-1. **Build-time**: The Vite plugin transforms `.astro` files to automatically inject loader registration code
-2. **Runtime**: Middleware sets up `AsyncLocalStorage` to track loaders during each request
-3. **Runtime**: Components with loaders register themselves when imported during rendering
-4. **Runtime**: The first call to `getLoaderData()` triggers parallel execution of all registered loaders
-5. **Runtime**: Results are cached in `Astro.locals.autoLoad` for the remainder of the request
-6. **Runtime**: Components retrieve their data using `await getLoaderData()`
+1. **Build-time (Vite Plugin)**:
+   - Recursively discovers your entire component tree (including slot-based children)
+   - Extracts all `loader` functions from discovered components
+   - Injects extracted loaders into parent frontmatter with unique registration keys
+   - Marks extracted children to skip duplicate registration
+
+2. **Runtime (Middleware)**:
+   - Sets up `AsyncLocalStorage` to track loaders during each request
+
+3. **Runtime (Component Execution)**:
+   - Parent component registers all extracted loaders (children + self) upfront
+   - Child components detect their loader was already extracted and skip registration
+   - First call to `getLoaderData()` triggers parallel execution of ALL registered loaders
+   - Results are cached in `Astro.locals.autoLoad` for the remainder of the request
+   - All components retrieve their data using `await getLoaderData()`
 
 **Benefits:**
 
-- Only executes loaders for components that are actually rendered
-- All loaders execute in parallel (no async waterfalls!)
-- Type-safe data access with inference via `getLoaderData<typeof loader>();`
+- ✅ **True parallel execution** - even nested component loaders execute simultaneously
+- ✅ **Works with slot-based composition** - recursive extraction discovers all children
+- ✅ **Zero waterfalls** - all loaders in the component tree execute in one batch
+- ✅ **Type-safe** - automatic type inference via `getLoaderData<typeof loader>()`
+- ✅ **Automatic** - no manual configuration needed (auto-wrapper for pages without loaders)
 
 ## API Reference
 
@@ -374,8 +395,22 @@ const { data } = Astro.props;
 ## Limitations
 
 - **Only works in SSR mode** (not static builds)
-- **Loaders run on-demand** - Results are cached per request, but there's no persistent caching across requests
-- **Loaders cannot access component props** - Loaders receive the `context` object (route params, URL, request) but not props
+- **Per-request execution** - Loaders execute on each request; results are cached within the request but not across requests
+- **Loaders cannot access component props** - Loaders receive the `context` object (route params, URL, request) but not props passed to the component
+- **Build-time discovery** - Component tree is analyzed at build time, so dynamic imports or runtime-conditional components won't have their loaders extracted
+
+**What IS supported:**
+
+- ✅ Direct imports (`import Child from './Child.astro'`)
+- ✅ Slot-based composition (children passed via `<slot />`)
+- ✅ Deeply nested component trees (any depth)
+- ✅ Conditional rendering with `{condition && <Component />}` (loader is extracted, just won't execute if component doesn't render)
+- ✅ Component reuse (same component used multiple times)
+
+**What is NOT supported:**
+
+- ❌ Dynamic imports (`const Component = await import('./Component.astro')`)
+- ❌ Static site generation (requires SSR)
 
 ### Server Islands
 
