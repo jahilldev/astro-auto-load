@@ -46,7 +46,7 @@ Total: ~50ms
 
 **Result:** ~67% faster! All sibling components execute in parallel ⚡
 
-#### 🎯 **Nested Components** (Major Win with Recursive Extraction!)
+#### 🎯 **Nested Components** (Win with Recursive Extraction!)
 
 **Before** (Traditional Async):
 
@@ -310,9 +310,19 @@ The integration automatically injects it for you - no `src/middleware.ts` needed
 
 **Why?** Astro uses **either** your manual `src/middleware.ts` export **or** integration-injected middleware, but not both. If you export `onRequest` yourself, you take full control and must include `autoLoadMiddleware` in your chain.
 
-### Skipping Routes
+### Routes Automatically Skipped
 
-By default, the middleware runs on all routes. To skip specific paths, create a wrapper middleware:
+The middleware automatically skips the following paths for performance:
+
+- `/_astro/*` - Astro build assets
+- `/assets/*` - Static assets
+- `/api/*` - API routes
+
+These routes bypass loader execution entirely.
+
+### Skipping Additional Routes
+
+To skip additional paths (e.g., admin routes), create a wrapper middleware:
 
 ```ts
 // src/middleware.ts
@@ -325,7 +335,7 @@ const conditionalAutoLoad = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  // Otherwise, run autoLoadMiddleware
+  // Otherwise, run autoLoadMiddleware (which has its own built-in skips)
   return autoLoadMiddleware(context, next);
 });
 
@@ -342,9 +352,9 @@ Simply pass `typeof loader` to `getLoaderData`:
 
 ```astro
 ---
-import { getLoaderData } from 'astro-auto-load/runtime';
+import { type Context, getLoaderData } from 'astro-auto-load/runtime';
 
-export const loader = async (context) => {
+export const loader = async (context: Context) => {
   return {
     name: 'Hugo',
     age: 42,
