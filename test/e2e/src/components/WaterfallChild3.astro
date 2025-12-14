@@ -1,13 +1,12 @@
 ---
 import WaterfallChild2 from './WaterfallChild2.astro';
 
-// Traditional Astro async component - awaits data in frontmatter
 const start = Date.now();
-await new Promise(resolve => setTimeout(resolve, 100));
+await new Promise((resolve) => setTimeout(resolve, 100));
 const duration = Date.now() - start;
 ---
 
 <div class="waterfall-child3" data-start={start} data-duration={duration}>
-  Waterfall Child 3 (took {duration}ms)
+  <p>WaterfallChild3: standard async, took {duration}ms</p>
   <WaterfallChild2 />
 </div>

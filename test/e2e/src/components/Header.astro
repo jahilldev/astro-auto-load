@@ -1,0 +1,16 @@
+---
+// Test: Mixed patterns - some components with loaders, some without
+import { getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return { component: 'Header', start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<header class="header-with-loader" data-start={data.start} data-duration={data.duration}>
+  <h1>Header (has loader, took {data.duration}ms)</h1>
+</header>

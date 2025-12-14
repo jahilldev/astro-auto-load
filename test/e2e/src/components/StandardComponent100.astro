@@ -1,0 +1,14 @@
+---
+// Reusable standard async component (no loader) - 100ms delay variant
+// Props: name, className
+const { name = 'StandardComponent', className = 'standard-component' } = Astro.props;
+
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 100));
+const duration = Date.now() - start;
+---
+
+<div class={className} data-component={name.toLowerCase()} data-start={start} data-duration={duration}>
+  <p>{name}: standard async, took {duration}ms</p>
+  <slot />
+</div>

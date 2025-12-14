@@ -1,0 +1,17 @@
+---
+import SlotWrapper from '../components/SlotWrapper.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Slot-Based Nested Test</title>
+</head>
+<body>
+  <h1>Slot-Based Nested Component Loaders</h1>
+  <p>This demonstrates recursive extraction - ALL loaders execute in parallel even with slot composition!</p>
+  
+  <SlotWrapper />
+</body>
+</html>

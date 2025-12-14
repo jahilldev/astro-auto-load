@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { registerLoader, getRegistry, initializeRequestRegistry } from '../src/runtime/registry.js';
+import { describe, it, expect } from 'vitest';
+import {
+  registerLoader,
+  getRegistry,
+  initializeRequestRegistry,
+} from '../src/runtime/registry.js';
 
 describe('Registry', () => {
   it('should register loaders within request context', () => {
@@ -17,17 +21,17 @@ describe('Registry', () => {
     });
   });
 
-  it('should overwrite existing loader for same module', () => {
+  it('should skip re-registration of already-registered loaders', () => {
     initializeRequestRegistry(() => {
       const loader1 = async () => ({ data: 'test1' });
       const loader2 = async () => ({ data: 'test2' });
 
       registerLoader('module1', loader1);
-      registerLoader('module1', loader2);
+      registerLoader('module1', loader2); // Should be skipped
 
       const registry = getRegistry();
       expect(registry.size).toBe(1);
-      expect(registry.get('module1')).toBe(loader2);
+      expect(registry.get('module1')).toBe(loader1); // First loader is kept
     });
   });
 

@@ -1,0 +1,21 @@
+---
+import { getLoaderData } from 'astro-auto-load/runtime';
+import TestComponent100 from './TestComponent100.astro';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  return { start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<div class="perf-loader-wrapper" data-start={data.start} data-duration={data.duration}>
+  <h2>Performance Loader Wrapper (took {data.duration}ms)</h2>
+  <TestComponent100 name="PerfLoaderLevel1" className="perf-loader-level1">
+    <TestComponent100 name="PerfLoaderLevel2" className="perf-loader-level2">
+      <TestComponent100 name="PerfLoaderLevel3" className="perf-loader-level3" />
+    </TestComponent100>
+  </TestComponent100>
+</div>

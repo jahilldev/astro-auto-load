@@ -1,0 +1,16 @@
+---
+import { getLoaderData } from 'astro-auto-load/runtime';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  return { start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<div class="parallel-child1" data-start={data.start} data-duration={data.duration}>
+  <h4>ParallelChild1: loaded in {data.duration}ms</h4>
+  <slot />
+</div>

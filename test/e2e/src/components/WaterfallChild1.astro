@@ -1,10 +1,10 @@
 ---
-// Traditional Astro async component - awaits data in frontmatter
 const start = Date.now();
-await new Promise(resolve => setTimeout(resolve, 100));
+await new Promise((resolve) => setTimeout(resolve, 100));
 const duration = Date.now() - start;
 ---
 
 <div class="waterfall-child1" data-start={start} data-duration={duration}>
-  Waterfall Child 1 (took {duration}ms)
+  <p>WaterfallChild1: standard async, took {duration}ms</p>
+  <slot />
 </div>

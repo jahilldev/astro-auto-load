@@ -1,0 +1,18 @@
+---
+// Test: Component that imports another component without a loader
+import { getLoaderData } from 'astro-auto-load/runtime';
+import Footer from './Footer.astro';
+
+export const loader = async () => {
+  const start = Date.now();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return { component: 'Sidebar', start, duration: Date.now() - start };
+};
+
+const data = await getLoaderData<typeof loader>();
+---
+
+<aside class="sidebar-with-loader" data-start={data.start} data-duration={data.duration}>
+  <h2>Sidebar (has loader, took {data.duration}ms)</h2>
+  <Footer content="Nested footer without loader" />
+</aside>

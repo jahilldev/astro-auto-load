@@ -1,0 +1,23 @@
+---
+// Traditional async component - NO loader, uses direct await
+import StandardSlotParent from './StandardSlotParent.astro';
+import StandardSlotChild1 from './StandardSlotChild1.astro';
+import StandardSlotChild2 from './StandardSlotChild2.astro';
+import StandardSlotGrandchild from './StandardSlotGrandchild.astro';
+
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 50));
+const duration = Date.now() - start;
+const data = { component: 'StandardSlotWrapper', start, duration };
+---
+
+<div class="standard-slot-wrapper" data-start={data.start} data-duration={data.duration}>
+  <h2>Standard Slot Wrapper (traditional async, took {data.duration}ms)</h2>
+  <StandardSlotParent>
+    <StandardSlotChild1>
+      <StandardSlotChild2>
+        <StandardSlotGrandchild />
+      </StandardSlotChild2>
+    </StandardSlotChild1>
+  </StandardSlotParent>
+</div>

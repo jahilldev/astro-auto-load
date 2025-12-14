@@ -1,0 +1,10 @@
+---
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 50));
+const duration = Date.now() - start;
+---
+
+<div class="standard-slot-child-1" data-start={start} data-duration={duration}>
+  <h4>StandardSlotChild1: standard async, took {duration}ms</h4>
+  <slot />
+</div>

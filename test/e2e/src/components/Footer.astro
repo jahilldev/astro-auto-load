@@ -1,0 +1,8 @@
+---
+// Test: Component without loader (should not cause issues)
+const { content } = Astro.props;
+---
+
+<footer class="footer-no-loader">
+  <p>{content || 'Footer (no loader)'}</p>
+</footer>

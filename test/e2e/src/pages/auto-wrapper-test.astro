@@ -1,0 +1,26 @@
+---
+import SlotParent from '../components/SlotParent.astro';
+import SlotChild1 from '../components/SlotChild1.astro';
+import SlotChild2 from '../components/SlotChild2.astro';
+import SlotGrandchild from '../components/SlotGrandchild.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Auto-Wrapper Test</title>
+</head>
+<body>
+  <h1>Automatic Wrapper Pattern (No Manual Wrapper Needed!)</h1>
+  <p>This page has NO loader, but imports all components - plugin auto-wraps!</p>
+  
+  <SlotParent>
+    <SlotChild1>
+      <SlotChild2>
+        <SlotGrandchild />
+      </SlotChild2>
+    </SlotChild1>
+  </SlotParent>
+</body>
+</html>
