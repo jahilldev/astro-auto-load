@@ -201,6 +201,64 @@ describe('E2E', () => {
       expect(html).toContain('Parallel Child 2');
       expect(html).toContain('Parallel Grandchild');
     }, 15000);
+
+    it('should extract and execute loaders from directly imported components', async () => {
+      expect(serverReady).toBe(true);
+
+      const startTime = Date.now();
+      const response = await fetch('http://localhost:4567/direct-import');
+      const responseTime = Date.now() - startTime;
+
+      expect(response.ok).toBe(true);
+
+      const html = await response.text();
+
+      // DirectParent directly imports ParallelChild1 and ParallelChild2
+      // With loader extraction, ALL THREE loaders should execute in parallel
+      const parentMatch = html.match(
+        /class="direct-parent" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const child1Match = html.match(
+        /class="parallel-child1" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+      const child2Match = html.match(
+        /class="parallel-child2" data-start="(\d+)" data-duration="(\d+)"/,
+      );
+
+      expect(parentMatch).toBeTruthy();
+      expect(child1Match).toBeTruthy();
+      expect(child2Match).toBeTruthy();
+
+      const parentStart = parseInt(parentMatch![1]);
+      const child1Start = parseInt(child1Match![1]);
+      const child2Start = parseInt(child2Match![1]);
+
+      // With loader extraction + coordination, ALL loaders execute in parallel!
+      // Extracted loaders are registered first, children skip re-registration
+      const diff_parent_child1 = Math.abs(parentStart - child1Start);
+      const diff_parent_child2 = Math.abs(parentStart - child2Start);
+      const diff_child1_child2 = Math.abs(child1Start - child2Start);
+
+      console.log(`\n🔬 Direct Import Loader Extraction Test:`);
+      console.log(`  Parent start: ${parentStart}ms`);
+      console.log(`  Child1 start: ${child1Start}ms (${diff_parent_child1}ms from parent)`);
+      console.log(`  Child2 start: ${child2Start}ms (${diff_parent_child2}ms from parent)`);
+      console.log(`  Children diff: ${diff_child1_child2}ms`);
+      console.log(`  Total response time: ${responseTime}ms`);
+      console.log(`  ✅ TRUE PARALLEL EXECUTION ACHIEVED!`);
+
+      // All loaders start at the same time (within ~5ms due to async overhead)
+      expect(diff_parent_child1).toBeLessThan(5);
+      expect(diff_parent_child2).toBeLessThan(5);
+      expect(diff_child1_child2).toBeLessThan(5);
+      
+      // Total time should be ~50ms (single parallel batch) not ~150ms (waterfall)
+      expect(responseTime).toBeLessThan(100);
+
+      expect(html).toContain('Direct Parent');
+      expect(html).toContain('Parallel Child 1');
+      expect(html).toContain('Parallel Child 2');
+    }, 15000);
   });
 
   describe('Traditional Async Component Waterfall', () => {

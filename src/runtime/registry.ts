@@ -8,6 +8,9 @@ const requestStorage = new AsyncLocalStorage<Map<string, LoaderFn>>();
  * Register a loader function for a component.
  * This is called automatically by the Vite plugin when a component is imported.
  * Uses AsyncLocalStorage to ensure loaders are scoped to the current request.
+ * 
+ * COORDINATION: If a loader is already registered for this moduleUrl (e.g., extracted
+ * by a parent component), skip re-registration to prevent duplicate execution.
  */
 export function registerLoader(moduleUrl: string, loader: LoaderFn) {
   const registry = requestStorage.getStore();
@@ -15,6 +18,12 @@ export function registerLoader(moduleUrl: string, loader: LoaderFn) {
   if (!registry) {
     // No active request context - this can happen during build or initial imports
     // We'll skip registration and let components register during actual requests
+    return;
+  }
+  
+  // Check if loader already registered (e.g., extracted by parent)
+  if (registry.has(moduleUrl)) {
+    console.log(`[registry] ⚡ Loader already registered for ${moduleUrl.split('/').pop()}, skipping`);
     return;
   }
   

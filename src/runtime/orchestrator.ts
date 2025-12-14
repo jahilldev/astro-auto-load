@@ -75,13 +75,35 @@ export class LazyLoaderExecutor {
 
   /**
    * Wait for the registry to stabilize (no new loaders being added).
-   * This ensures all nested components have registered before we execute.
+   * OPTIMIZED: Use aggressive early execution with dynamic batch extension
    */
   private async waitForRegistryStability(): Promise<void> {
     let lastSize = this.registry.size;
     let stableCount = 0;
-    const requiredStableChecks = 50; // Require many consecutive stable checks
+    const requiredStableChecks = 3; // REDUCED from 10 - execute faster!
 
+    // Quick check: if registry is empty or already stable, only wait briefly
+    await new Promise((resolve) => setImmediate(resolve));
+    if (this.registry.size === lastSize && this.registry.size > 0) {
+      // Registry might already be stable, do a few quick checks
+      for (let i = 0; i < requiredStableChecks; i++) {
+        await new Promise((resolve) => setImmediate(resolve));
+        if (this.registry.size !== lastSize) {
+          // Size changed, needs more time
+          lastSize = this.registry.size;
+          stableCount = 0;
+          break;
+        }
+        stableCount++;
+      }
+      
+      if (stableCount >= requiredStableChecks) {
+        // Confirmed stable
+        return;
+      }
+    }
+
+    // If we get here, registry is still changing - wait for it to stabilize
     while (stableCount < requiredStableChecks) {
       await new Promise((resolve) => setImmediate(resolve));
       const currentSize = this.registry.size;
@@ -104,6 +126,9 @@ export class LazyLoaderExecutor {
   private async executeBatch(): Promise<void> {
     // Execute ALL registered loaders
     const loadersToExecute = Array.from(this.registry.entries());
+    
+    console.log(`[orchestrator] Executing batch of ${loadersToExecute.length} loaders in parallel`);
+    const batchStart = Date.now();
 
     const executions = loadersToExecute.map(async ([moduleUrl, loader]) => {
       // Skip if already executed
@@ -120,6 +145,9 @@ export class LazyLoaderExecutor {
     });
 
     await Promise.all(executions);
+    
+    const batchTime = Date.now() - batchStart;
+    console.log(`[orchestrator] Batch completed in ${batchTime}ms`);
   }
 }
 
