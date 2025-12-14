@@ -20,23 +20,51 @@ In typical Astro SSR apps, you face a choice:
 
 ### Performance Impact
 
-**Before** (Traditional Async Components):
+The performance benefit depends on your component structure:
+
+#### 🚀 **Sibling Components** (Major Win!)
+
+**Before** (Traditional Async):
 
 ```
-Component Tree: Parent → Child → Grandchild
-Each component: ~100ms data fetch
-Total fetch time: ~300ms (sequential waterfall)
+Page renders: <Component1 />, <Component2 />, <Component3 />
+Each component: ~50ms data fetch (sequential)
+Total: ~150ms waterfall
 ```
 
-**After** (With astro-auto-load):
+**After** (astro-auto-load):
 
 ```
-Component Tree: Parent → Child → Grandchild
-Each component: ~100ms data fetch
-Total fetch time: ~100ms (parallel execution)
+Page renders: <Component1 />, <Component2 />, <Component3 />
+Each component: ~50ms data fetch (parallel!)
+Total: ~50ms
 ```
 
-**Result:** ~3x faster rendering, verified by [E2E tests](test/e2e.test.ts) ⚡
+**Result:** ~67% faster! All sibling components execute in parallel ⚡
+
+#### 📊 **Nested Components** (Comparable)
+
+**Before** (Traditional Async):
+
+```
+<Parent> → <Child> → <Grandchild>
+Each: ~100ms data fetch (sequential due to nesting)
+Total: ~200ms
+```
+
+**After** (astro-auto-load):
+
+```
+<Parent> → <Child> → <Grandchild>
+Batched execution with registry stability detection
+Total: ~200ms (comparable)
+```
+
+**Result:** Similar performance - both approaches are sequential due to nesting constraint
+
+#### ✅ **Real-World Benefit**
+
+Most pages render **multiple sibling components** (nav, sidebar, content sections, etc.), where this integration eliminates waterfalls and provides significant speedups. Verified by [E2E tests](test/e2e.test.ts).
 
 ## Installation
 

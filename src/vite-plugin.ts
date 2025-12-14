@@ -19,10 +19,10 @@ export function astroAutoLoadVitePlugin(): Plugin {
 
     async load(id) {
       if (!id.endsWith('.astro')) return null;
-      
+
       const fs = await import('fs/promises');
       const code = await fs.readFile(id.split('?')[0], 'utf-8');
-      
+
       // Check for 'export const loader' in frontmatter
       const hasLoaderExport = /export\s+(const|async\s+function)\s+loader\s*[=(]/m.test(code);
 
@@ -41,14 +41,16 @@ export function astroAutoLoadVitePlugin(): Plugin {
       // Step 1: Add registerLoader import if not present
       if (!frontmatter.includes('registerLoader')) {
         // Check if there's already an import from astro-auto-load/runtime
-        const runtimeImportMatch = frontmatter.match(/import\s+\{([^}]+)\}\s+from\s+['"]astro-auto-load\/runtime['"]/);
-        
+        const runtimeImportMatch = frontmatter.match(
+          /import\s+\{([^}]+)\}\s+from\s+['"]astro-auto-load\/runtime['"]/,
+        );
+
         if (runtimeImportMatch) {
           // Add registerLoader to existing import
           const imports = runtimeImportMatch[1];
           frontmatter = frontmatter.replace(
             /import\s+\{([^}]+)\}\s+from\s+['"]astro-auto-load\/runtime['"]/,
-            `import { ${imports.trim()}, registerLoader } from 'astro-auto-load/runtime'`
+            `import { ${imports.trim()}, registerLoader } from 'astro-auto-load/runtime'`,
           );
         } else {
           // Add new import at the top
@@ -59,21 +61,23 @@ export function astroAutoLoadVitePlugin(): Plugin {
       // Step 2: Inject loader registration after loader definition
       frontmatter = frontmatter.replace(
         /(export\s+const\s+loader\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
-        '$1\nregisterLoader(import.meta.url, loader);'
+        '$1\nregisterLoader(import.meta.url, loader);',
       );
 
       // Step 3: CRITICAL - Remove blocking await from frontmatter
       // Match: const data = await getLoaderData<typeof loader>();
       // This is what blocks child components from registering!
-      const dataVarMatch = frontmatter.match(/const\s+(\w+)\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?/);
-      
+      const dataVarMatch = frontmatter.match(
+        /const\s+(\w+)\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?/,
+      );
+
       if (dataVarMatch) {
         const dataVarName = dataVarMatch[1]; // e.g., "data"
-        
+
         // Remove the blocking await line (handle with or without trailing newline)
         frontmatter = frontmatter.replace(
           /const\s+\w+\s*=\s*await\s+getLoaderData<typeof\s+loader>\(\);?(\s*\n)?/,
-          '// Data access deferred to template for non-blocking parallel execution\n'
+          '// Data access deferred to template for non-blocking parallel execution\n',
         );
 
         // Step 4: Transform template to access data from Astro.locals
@@ -82,7 +86,7 @@ export function astroAutoLoadVitePlugin(): Plugin {
         const dataAccessRegex = new RegExp(`\\b${dataVarName}\\.(\\w+)\\b`, 'g');
         template = template.replace(
           dataAccessRegex,
-          (match, prop) => `(await Astro.locals.autoLoad.getData(import.meta.url)).${prop}`
+          (match, prop) => `(await Astro.locals.autoLoad.getData(import.meta.url)).${prop}`,
         );
       }
 

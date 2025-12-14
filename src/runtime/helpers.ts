@@ -1,7 +1,8 @@
 import type { Context } from './types.js';
 import type { LazyLoaderExecutor } from './orchestrator.js';
 
-const exceptionMessage = 'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.';
+const exceptionMessage =
+  'This should be auto-injected by the Vite plugin. Please ensure the integration is properly installed.';
 
 /**
  * Define a loader function with automatic context typing.
@@ -24,7 +25,7 @@ const exceptionMessage = 'This should be auto-injected by the Vite plugin. Pleas
  * ```
  */
 export function defineLoader<T>(
-  fn: (context: Context) => Promise<T>
+  fn: (context: Context) => Promise<T>,
 ): (context: Context) => Promise<T> {
   return fn;
 }
@@ -48,25 +49,23 @@ export function defineLoader<T>(
  * ---
  * <h1>{data.title}</h1>
  * ```
- * 
+ *
  * @param astro - The Astro global object (auto-injected by Vite plugin)
  * @param moduleUrl - The module URL (auto-injected by Vite plugin)
  * @throws {Error} If autoLoadMiddleware is not configured or Vite plugin transformation failed
  */
 export function getLoaderData<TLoader extends (context: any) => Promise<any>>(
   astro?: any,
-  moduleUrl?: string
+  moduleUrl?: string,
 ): Promise<Awaited<ReturnType<TLoader>>> {
   if (!astro) {
     throw new Error(
-      '[astro-auto-load] getLoaderData() called without Astro context. ' + exceptionMessage
+      '[astro-auto-load] getLoaderData() called without Astro context. ' + exceptionMessage,
     );
   }
 
   if (!moduleUrl) {
-    throw new Error(
-      '[astro-auto-load] Module URL not found. ' + exceptionMessage
-    );
+    throw new Error('[astro-auto-load] Module URL not found. ' + exceptionMessage);
   }
 
   const locals = astro.locals;
@@ -74,9 +73,9 @@ export function getLoaderData<TLoader extends (context: any) => Promise<any>>(
   if (!locals?.autoLoad) {
     throw new Error(
       '[astro-auto-load] Middleware not configured. ' +
-      'Ensure autoLoadMiddleware is running. If you have a custom src/middleware.ts, ' +
-      'you must manually include autoLoadMiddleware in your sequence. ' +
-      'See: https://github.com/jahilldev/astro-auto-load#custom-middleware-composition'
+        'Ensure autoLoadMiddleware is running. If you have a custom src/middleware.ts, ' +
+        'you must manually include autoLoadMiddleware in your sequence. ' +
+        'See: https://github.com/jahilldev/astro-auto-load#custom-middleware-composition',
     );
   }
 

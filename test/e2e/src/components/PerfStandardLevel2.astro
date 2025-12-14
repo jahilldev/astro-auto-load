@@ -1,0 +1,11 @@
+---
+// Standard async component - waterfall pattern (blocks parent rendering)
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 100));
+const duration = Date.now() - start;
+---
+
+<div class="perf-standard-level2" data-start={start} data-duration={duration}>
+  <p>Standard Level 2 (took {duration}ms)</p>
+  <slot />
+</div>

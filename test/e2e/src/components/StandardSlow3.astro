@@ -1,0 +1,11 @@
+---
+// Standard async component pattern - causes waterfall
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 100));
+const duration = Date.now() - start;
+const data = { component: 'StandardSlow3', start, duration };
+---
+
+<div data-component="standard-slow3" data-start={data.start} data-duration={data.duration}>
+  StandardSlow3: {data.duration}ms (Start: {data.start})
+</div>

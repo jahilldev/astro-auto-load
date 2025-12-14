@@ -1,0 +1,27 @@
+---
+import StandardSlow1 from '../components/StandardSlow1.astro';
+import StandardSlow2 from '../components/StandardSlow2.astro';
+import StandardSlow3 from '../components/StandardSlow3.astro';
+
+const pageStart = Date.now();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Performance Comparison - Standard Waterfall vs Parallel Loaders</title>
+</head>
+<body>
+  <h1>Performance Comparison</h1>
+  <p>Page Start: {pageStart}</p>
+  
+  <h2>Standard Async Components (Waterfall Pattern)</h2>
+  <p>These execute sequentially - each waits for the previous to complete.</p>
+  <StandardSlow1 />
+  <StandardSlow2 />
+  <StandardSlow3 />
+  
+  <p>Page End: {Date.now()} (Total: {Date.now() - pageStart}ms)</p>
+</body>
+</html>

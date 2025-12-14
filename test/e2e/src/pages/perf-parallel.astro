@@ -1,0 +1,27 @@
+---
+import Slow1 from '../components/Slow1.astro';
+import Slow2 from '../components/Slow2.astro';
+import Slow3 from '../components/Slow3.astro';
+
+const pageStart = Date.now();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Performance Comparison - Parallel Loaders</title>
+</head>
+<body>
+  <h1>Performance Comparison</h1>
+  <p>Page Start: {pageStart}</p>
+  
+  <h2>Auto-Load Parallel Loaders</h2>
+  <p>These execute in parallel - all start simultaneously.</p>
+  <Slow1 />
+  <Slow2 />
+  <Slow3 />
+  
+  <p>Page End: {Date.now()} (Total: {Date.now() - pageStart}ms)</p>
+</body>
+</html>

@@ -11,12 +11,12 @@ export interface RunAllLoadersOptions {
 /**
  * LazyLoaderExecutor tracks which loaders are requested during render
  * and executes them all in parallel when the first one is awaited.
- * 
+ *
  * This ensures:
  * - Only loaders for rendered components execute
  * - All needed loaders execute in parallel (no waterfalls)
  * - Each loader runs exactly once per request
- * 
+ *
  * Strategy: Queue all getData() calls, then batch execute on microtask
  */
 export class LazyLoaderExecutor {
@@ -44,7 +44,11 @@ export class LazyLoaderExecutor {
 
     // If this loader wasn't executed in a previous batch, and a batch already completed,
     // we need to schedule a new batch for late arrivals
-    if (this.isBatchScheduled && !this.results.has(moduleUrl) && !this.errors.has(moduleUrl)) {
+    if (
+      this.isBatchScheduled &&
+      !this.results.has(moduleUrl) &&
+      !this.errors.has(moduleUrl)
+    ) {
       //Reset and schedule new batch
       this.batchPromise = null;
       this.isBatchScheduled = false;
@@ -77,11 +81,11 @@ export class LazyLoaderExecutor {
     let lastSize = this.registry.size;
     let stableCount = 0;
     const requiredStableChecks = 50; // Require many consecutive stable checks
-    
+
     while (stableCount < requiredStableChecks) {
-      await new Promise(resolve => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
       const currentSize = this.registry.size;
-      
+
       if (currentSize === lastSize) {
         stableCount++;
       } else {
@@ -123,9 +127,7 @@ export class LazyLoaderExecutor {
  * Create a lazy loader executor for a request.
  * This doesn't execute any loaders until they're requested via getData().
  */
-export function createLoaderExecutor(
-  options: RunAllLoadersOptions,
-): LazyLoaderExecutor {
+export function createLoaderExecutor(options: RunAllLoadersOptions): LazyLoaderExecutor {
   const { params, request, extend } = options;
   const context = createLoaderContext({ params, request, extend });
   const registry = getRegistry();

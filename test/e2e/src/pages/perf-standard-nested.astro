@@ -1,0 +1,19 @@
+---
+import PerfStandardLevel1 from '../components/PerfStandardLevel1.astro';
+import PerfStandardLevel2 from '../components/PerfStandardLevel2.astro';
+import PerfStandardLevel3 from '../components/PerfStandardLevel3.astro';
+---
+
+<html>
+  <head>
+    <title>Performance Test - Standard Async Waterfall</title>
+  </head>
+  <body>
+    <h1>Standard Async Waterfall (Nested)</h1>
+    <PerfStandardLevel1>
+      <PerfStandardLevel2>
+        <PerfStandardLevel3 />
+      </PerfStandardLevel2>
+    </PerfStandardLevel1>
+  </body>
+</html>
