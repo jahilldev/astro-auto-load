@@ -1,0 +1,24 @@
+---
+import AsyncComponent1 from '../components/AsyncComponent1.astro';
+import AsyncComponent2 from '../components/AsyncComponent2.astro';
+import AsyncComponent3 from '../components/AsyncComponent3.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Performance Comparison - With Plugin</title>
+  </head>
+  <body>
+    <h1>Performance Test: With astro-auto-load Plugin</h1>
+    <p>All loaders should execute in parallel (single batch)</p>
+    
+    <AsyncComponent1>
+      <AsyncComponent2>
+        <AsyncComponent3 />
+        <AsyncComponent3 />
+      </AsyncComponent2>
+    </AsyncComponent1>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+---
+// Traditional async approach - no loader, just async/await in frontmatter
+const start = Date.now();
+await new Promise((resolve) => setTimeout(resolve, 50));
+const duration = Date.now() - start;
+---
+
+<div class="standard-async-component-3" data-start={start} data-duration={duration}>
+  <h5>StandardAsyncComponent3 (async: {duration}ms)</h5>
+</div>

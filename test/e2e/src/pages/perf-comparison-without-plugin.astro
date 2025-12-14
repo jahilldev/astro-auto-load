@@ -1,0 +1,24 @@
+---
+import StandardAsyncComponent1 from '../components/StandardAsyncComponent1.astro';
+import StandardAsyncComponent2 from '../components/StandardAsyncComponent2.astro';
+import StandardAsyncComponent3 from '../components/StandardAsyncComponent3.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Performance Comparison - Without Plugin</title>
+  </head>
+  <body>
+    <h1>Performance Test: Without Plugin (Standard Async)</h1>
+    <p>Components execute sequentially (waterfall pattern)</p>
+    
+    <StandardAsyncComponent1>
+      <StandardAsyncComponent2>
+        <StandardAsyncComponent3 />
+        <StandardAsyncComponent3 />
+      </StandardAsyncComponent2>
+    </StandardAsyncComponent1>
+  </body>
+</html>
