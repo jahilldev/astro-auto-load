@@ -1,12 +1,12 @@
 ---
-import { getLoaderData } from 'astro-auto-load/runtime';
+import { defineLoader, getLoaderData } from 'astro-auto-load/runtime';
 
-export const loader = async () => {
+export const loader = defineLoader(async () => {
   const start = Date.now();
   await new Promise((resolve) => setTimeout(resolve, 50));
   const duration = Date.now() - start;
   return { start, duration, component: 'AsyncComponent2' };
-};
+});
 
 const data = await getLoaderData<typeof loader>();
 ---

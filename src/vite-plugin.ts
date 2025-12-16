@@ -96,8 +96,10 @@ async function discoverComponentTree(
     const fs = await import('fs/promises');
     const code = await fs.readFile(filePath, 'utf-8');
 
-    // Check if this component has a loader
-    const hasLoader = /export\s+const\s+loader\s*=/m.test(code);
+    // Check if this component has a loader (supports all formats)
+    const hasLoader = /export\s+(const\s+loader\s*=|async\s+function\s+loader\s*\()/m.test(
+      code,
+    );
 
     if (hasLoader) {
       components.push({
@@ -236,31 +238,31 @@ export function astroAutoLoadVitePlugin(): Plugin {
           const fs = await import('fs/promises');
           const childCode = await fs.readFile(component.filePath, 'utf-8');
 
-          // Extract the loader function from child's frontmatter
-          // Pattern: export const loader = async () => { ... };
-          const loaderMatch = childCode.match(
-            /export\s+const\s+loader\s*=\s*(async\s+)?\(\s*\)\s*=>\s*\{([\s\S]*?)\n\};/,
+          // Extract loader: supports arrow functions, function declarations, and defineLoader wrapper
+          const match = childCode.match(
+            /export\s+(?:const\s+loader\s*=\s*(?:defineLoader\s*\(\s*)?(async\s+)?\(\s*(\w+)?\s*\)\s*=>\s*\{([\s\S]*?)\n\}(?:\s*\))?;?|async\s+function\s+loader\s*\(\s*(\w+)?\s*\)\s*\{([\s\S]*?)\n\};?)/,
           );
 
-          if (loaderMatch) {
-            const loaderBody = loaderMatch[2]; // Just the body content
-            const isAsync = !!loaderMatch[1];
+          if (match) {
+            const isAsync = !!(match[1] || match[0].includes('async'));
+            const hasContext = !!(match[2] || match[4]);
+            const loaderBody = match[3] || match[5];
 
-            // Generate a unique variable name for this extracted loader
             const componentName =
               component.filePath
                 .split('/')
                 .pop()
                 ?.replace(/\.astro$/, '') || 'component';
+
             const varName = `__extracted_${componentName}_${Math.random().toString(36).substring(2, 7)}`;
+            const params = hasContext ? 'context' : '';
 
             extractedLoadersForThis.push({
               filePath: component.filePath,
               varName,
-              loaderCode: `const ${varName} = ${isAsync ? 'async ' : ''}() => {${loaderBody}\n};`,
+              loaderCode: `const ${varName} = ${isAsync ? 'async ' : ''}(${params}) => {${loaderBody}\n};`,
             });
 
-            // Mark this component as extracted (globally)
             extractedLoaders.add(component.filePath);
           }
         } catch {
@@ -306,9 +308,9 @@ export function astroAutoLoadVitePlugin(): Plugin {
       if (hasLoaderExport) {
         let registrationCode = '\nregisterLoader(import.meta.url, loader);';
 
-        // STEP 5: Inject registrations after loader definition
+        // STEP 5: Inject registration after loader definition (supports all formats)
         frontmatter = frontmatter.replace(
-          /(export\s+const\s+loader\s*=\s*(?:async\s+)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\};?)/,
+          /(export\s+(?:const\s+loader\s*=\s*(?:defineLoader\s*\([\s\S]*?\)|(?:async\s+)?\([^)]*\)\s*=>\s*\{[\s\S]*?\n\})|async\s+function\s+loader\s*\([^)]*\)\s*\{[\s\S]*?\n\});?)/,
           `$1${registrationCode}`,
         );
 
