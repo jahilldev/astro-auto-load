@@ -3,7 +3,7 @@
 import { getLoaderData } from 'astro-auto-load/runtime';
 import NestedLevel2 from './NestedLevel2.astro';
 
-export const loader = async () => {
+export async function loader () {
   const start = Date.now();
   await new Promise((resolve) => setTimeout(resolve, 30));
   return { component: 'NestedLevel1', start, duration: Date.now() - start };

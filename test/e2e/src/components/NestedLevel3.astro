@@ -1,7 +1,7 @@
 ---
 import { getLoaderData } from 'astro-auto-load/runtime';
 
-export const loader = async () => {
+export async function loader () {
   const start = Date.now();
   await new Promise((resolve) => setTimeout(resolve, 30));
   return { start, duration: Date.now() - start };
